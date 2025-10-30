@@ -67,19 +67,19 @@ public class SwerveSubsystem extends TunerSwerveDrivetrain implements Subsystem 
 
   // Predefined reef branch target poses (Blue alliance, mirrored for Red)
   private static final Pose2d[] BLUE_LEFT_BRANCHES = {
-    new Pose2d(3.091, 4.181, Rotation2d.fromDegrees(0)),
+    new Pose2d(3.091, 4.181, Rotation2d.kZero),
     new Pose2d(3.656, 2.916, Rotation2d.fromDegrees(60)),
     new Pose2d(5.023, 2.772, Rotation2d.fromDegrees(120)),
-    new Pose2d(5.850, 3.851, Rotation2d.fromDegrees(180)),
+    new Pose2d(5.850, 3.851, Rotation2d.k180deg),
     new Pose2d(5.347, 5.134, Rotation2d.fromDegrees(240)),
     new Pose2d(3.932, 5.302, Rotation2d.fromDegrees(300))
   };
 
   private static final Pose2d[] BLUE_RIGHT_BRANCHES = {
-    new Pose2d(3.091, 3.863, Rotation2d.fromDegrees(0)),
+    new Pose2d(3.091, 3.863, Rotation2d.kZero),
     new Pose2d(3.956, 2.748, Rotation2d.fromDegrees(60)),
     new Pose2d(5.323, 2.928, Rotation2d.fromDegrees(120)),
-    new Pose2d(5.862, 4.187, Rotation2d.fromDegrees(180)),
+    new Pose2d(5.862, 4.187, Rotation2d.k180deg),
     new Pose2d(5.047, 5.290, Rotation2d.fromDegrees(240)),
     new Pose2d(3.668, 5.110, Rotation2d.fromDegrees(300))
   };

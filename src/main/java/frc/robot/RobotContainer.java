@@ -321,7 +321,7 @@ public class RobotContainer {
     if (alliance.isPresent() && alliance.get() == DriverStation.Alliance.Red) {
       double flippedX = Constants.FIELD_LAYOUT.getFieldLength() - pose.getX();
       double flippedY = Constants.FIELD_LAYOUT.getFieldWidth() - pose.getY();
-      Rotation2d flippedRotation = pose.getRotation().plus(Rotation2d.fromDegrees(180));
+      Rotation2d flippedRotation = pose.getRotation().plus(Rotation2d.k180deg);
       return new Pose2d(flippedX, flippedY, flippedRotation);
     }
     return pose;

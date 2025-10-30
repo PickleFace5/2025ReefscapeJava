@@ -75,18 +75,18 @@ public class Constants {
   }
 
   public static class PivotConstants {
-    public static final double INSIDE_ELEVATOR_ANGLE = 0.2;
-    public static final double ELEVATOR_PRIORITY_ANGLE = 0.123535;
-    public static final double STOW_ANGLE = 0.188;
-    public static final double GROUND_INTAKE_ANGLE = -0.119385;
-    public static final double FUNNEL_INTAKE_ANGLE = 0.28;
-    public static final double ALGAE_INTAKE_ANGLE = -0.05;
-    public static final double HIGH_SCORING_ANGLE = 0.21;
-    public static final double MID_SCORING_ANGLE = 0.22;
-    public static final double LOW_SCORING_ANGLE = -0.119385;
+    public static final double INSIDE_ELEVATOR_ANGLE = 0.279297;
+    public static final double ELEVATOR_PRIORITY_ANGLE = 0.241943;
+    public static final double STOW_ANGLE = 0.267334;
+    public static final double GROUND_INTAKE_ANGLE = -0.054688 ;
+    public static final double FUNNEL_INTAKE_ANGLE = 0.373;
+    public static final double ALGAE_INTAKE_ANGLE = -0.04;
+    public static final double HIGH_SCORING_ANGLE = 0.30;
+    public static final double MID_SCORING_ANGLE = 0.30;
+    public static final double LOW_SCORING_ANGLE = -0.065186;
     public static final double NET_SCORING_ANGLE = 0.131;
     public static final double PROCESSOR_SCORING_ANGLE = 0.001;
-    public static final double CLIMBER_PRIORITY_ANGLE = 0.201943;
+    public static final double CLIMBER_PRIORITY_ANGLE = 0.349365;
 
     public static final double MINIMUM_ANGLE = -0.091;
     public static final double MAXIMUM_ANGLE = 0.392822;
@@ -94,7 +94,7 @@ public class Constants {
     public static final double CRUISE_VELOCITY = 3;
     public static final double MM_ACCELERATION = 3;
 
-    public static final double GEAR_RATIO = 961.0 / 36.0;
+    public static final double GEAR_RATIO = 23.0;
     public static final Slot0Configs GAINS =
         new Slot0Configs()
             .withKG(0.518)
@@ -107,7 +107,7 @@ public class Constants {
             .withGravityType(GravityTypeValue.Arm_Cosine);
 
     public static final double CANCODER_DISCONTINUITY = 0.5;
-    public static final double CANCODER_OFFSET = 0.35009765625;
+    public static final double CANCODER_OFFSET = -0.168701171875;
 
     public static final double SETPOINT_TOLERANCE = 0.03125;
   }

@@ -75,7 +75,7 @@ public class PivotSubsystem extends StateSubsystem<PivotSubsystem.SubsystemState
     MASTER_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
     MASTER_CONFIG.Feedback.FeedbackRemoteSensorID = Constants.CanIDs.PIVOT_CANCODER;
 
-    MASTER_CONFIG.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+    MASTER_CONFIG.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
     MASTER_CONFIG.MotorOutput.NeutralMode = NeutralModeValue.Brake;
 
     MASTER_CONFIG.Slot0.kP = Constants.PivotConstants.GAINS.kP;

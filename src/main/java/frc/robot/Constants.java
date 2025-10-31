@@ -78,7 +78,7 @@ public class Constants {
     public static final double INSIDE_ELEVATOR_ANGLE = 0.279297;
     public static final double ELEVATOR_PRIORITY_ANGLE = 0.241943;
     public static final double STOW_ANGLE = 0.267334;
-    public static final double GROUND_INTAKE_ANGLE = -0.054688 ;
+    public static final double GROUND_INTAKE_ANGLE = -0.054688;
     public static final double FUNNEL_INTAKE_ANGLE = 0.373;
     public static final double ALGAE_INTAKE_ANGLE = -0.04;
     public static final double HIGH_SCORING_ANGLE = 0.30;

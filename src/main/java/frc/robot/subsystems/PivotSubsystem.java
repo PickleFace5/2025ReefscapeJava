@@ -94,13 +94,13 @@ public class PivotSubsystem extends StateSubsystem<PivotSubsystem.SubsystemState
 
     encoder = new CANcoder(Constants.CanIDs.PIVOT_CANCODER);
     masterMotor = new TalonFX(Constants.CanIDs.LEFT_PIVOT_TALON);
-    masterMotor.getSimState().Orientation = ChassisReference.Clockwise_Positive;
+    masterMotor.getSimState().Orientation = ChassisReference.CounterClockwise_Positive;
 
     encoder.getConfigurator().apply(ENCODER_CONFIG);
     masterMotor.getConfigurator().apply(MASTER_CONFIG);
 
     this.addTalonSimModel(
-        masterMotor, DCMotor.getKrakenX60Foc(1), Constants.PivotConstants.GEAR_RATIO, 0.0807378172);
+        masterMotor, DCMotor.getKrakenX60Foc(1), Constants.PivotConstants.GEAR_RATIO / 10, 0.00001);
 
     atSetpointDebounce = new Debouncer(0.1, Debouncer.DebounceType.kRising);
     atSetpoint = true;

@@ -6,6 +6,7 @@ import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -49,7 +50,8 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
   private final CommandXboxController driver = new CommandXboxController(0);
-  private final CommandXboxController functions = new CommandXboxController(1);
+  private final CommandXboxController functions =
+      new CommandXboxController(RobotBase.isReal() ? 1 : 0);
 
   private final DriveSubsystem drivetrain;
   private final ClimberSubsystem climber;

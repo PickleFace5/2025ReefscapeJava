@@ -352,6 +352,12 @@ public class RobotContainer {
         drivetrain
             .run(() -> DriveCommands.robotRelative(drivetrain, () -> 1, () -> 0, () -> 0))
             .withTimeout(1.0));
+    autoChooser.addOption(
+        "Feedforward Characterization",
+        drivetrain.run(() -> DriveCommands.feedforwardCharacterization(drivetrain)));
+    autoChooser.addOption(
+        "Wheel Radius Characterization",
+        drivetrain.run(() -> DriveCommands.wheelRadiusCharacterization(drivetrain)));
   }
 
   public void readyRobotForMatch() {

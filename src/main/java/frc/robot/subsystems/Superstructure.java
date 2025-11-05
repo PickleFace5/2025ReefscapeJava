@@ -10,9 +10,16 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.subsystems.climber.ClimberSubsystem;
+import frc.robot.subsystems.elevator.ElevatorSubsystem;
+import frc.robot.subsystems.funnel.FunnelSubsystem;
+import frc.robot.subsystems.intake.IntakeSubsystem;
+import frc.robot.subsystems.pivot.PivotSubsystem;
+import frc.robot.subsystems.swerve.DriveSubsystem;
+import frc.robot.subsystems.vision.VisionSubsystem;
 import java.util.EnumMap;
 import java.util.Map;
+import org.littletonrobotics.junction.AutoLogOutput;
 
 public class Superstructure extends SubsystemBase {
 
@@ -32,7 +39,7 @@ public class Superstructure extends SubsystemBase {
     FINISH
   }
 
-  private final SwerveSubsystem drivetrain;
+  private final DriveSubsystem drivetrain;
   private final PivotSubsystem pivot;
   private final ElevatorSubsystem elevator;
   private final FunnelSubsystem funnel;
@@ -42,25 +49,25 @@ public class Superstructure extends SubsystemBase {
 
   private Goal currentGoal = Goal.DEFAULT;
 
-  private PivotSubsystem.SubsystemState desiredPivotState;
-  private ElevatorSubsystem.SubsystemState desiredElevatorState;
+  private PivotSubsystem.State desiredPivotState;
+  private ElevatorSubsystem.State desiredElevatorState;
 
   private final Map<Goal, GoalStates> goalToStates = new EnumMap<>(Goal.class);
 
   private record GoalStates(
-      PivotSubsystem.SubsystemState pivotState,
-      ElevatorSubsystem.SubsystemState elevatorState,
-      FunnelSubsystem.SubsystemState funnelState,
-      VisionSubsystem.SubsystemState visionState) {}
+      PivotSubsystem.State pivotState,
+      ElevatorSubsystem.State elevatorState,
+      FunnelSubsystem.State funnelState) {}
 
-  static NetworkTable table = NetworkTableInstance.getDefault().getTable("Superstructure");
+  static NetworkTable table =
+      NetworkTableInstance.getDefault().getTable("AdvantageKit").getSubTable("Superstructure");
   private static final StringPublisher currentGoalPub =
       table.getStringTopic("Current Goal").publish();
   private static final StructArrayPublisher<Pose3d> componentPoses =
       table.getStructArrayTopic("Components", Pose3d.struct).publish();
 
   public Superstructure(
-      SwerveSubsystem drivetrain,
+      DriveSubsystem drivetrain,
       PivotSubsystem pivot,
       ElevatorSubsystem elevator,
       FunnelSubsystem funnel,
@@ -79,94 +86,77 @@ public class Superstructure extends SubsystemBase {
     goalToStates.put(
         Goal.DEFAULT,
         new GoalStates(
-            PivotSubsystem.SubsystemState.STOW,
-            ElevatorSubsystem.SubsystemState.DEFAULT,
-            FunnelSubsystem.SubsystemState.DOWN,
-            VisionSubsystem.SubsystemState.ALL_ESTIMATES));
+            PivotSubsystem.State.STOW,
+            ElevatorSubsystem.State.DEFAULT,
+            FunnelSubsystem.State.DOWN));
     goalToStates.put(
         Goal.L4_CORAL,
         new GoalStates(
-            PivotSubsystem.SubsystemState.HIGH_SCORING,
-            ElevatorSubsystem.SubsystemState.L4,
-            FunnelSubsystem.SubsystemState.DOWN,
-            VisionSubsystem.SubsystemState.REEF_ESTIMATES));
+            PivotSubsystem.State.HIGH_SCORING,
+            ElevatorSubsystem.State.L4,
+            FunnelSubsystem.State.DOWN));
     goalToStates.put(
         Goal.L3_CORAL,
         new GoalStates(
-            PivotSubsystem.SubsystemState.L3_CORAL,
-            ElevatorSubsystem.SubsystemState.L3,
-            FunnelSubsystem.SubsystemState.DOWN,
-            VisionSubsystem.SubsystemState.REEF_ESTIMATES));
+            PivotSubsystem.State.L3_CORAL, ElevatorSubsystem.State.L3, FunnelSubsystem.State.DOWN));
     goalToStates.put(
         Goal.L2_CORAL,
         new GoalStates(
-            PivotSubsystem.SubsystemState.L2_CORAL,
-            ElevatorSubsystem.SubsystemState.L2,
-            FunnelSubsystem.SubsystemState.DOWN,
-            VisionSubsystem.SubsystemState.REEF_ESTIMATES));
+            PivotSubsystem.State.L2_CORAL, ElevatorSubsystem.State.L2, FunnelSubsystem.State.DOWN));
     goalToStates.put(
         Goal.L1_CORAL,
         new GoalStates(
-            PivotSubsystem.SubsystemState.LOW_SCORING,
-            ElevatorSubsystem.SubsystemState.L1,
-            FunnelSubsystem.SubsystemState.DOWN,
-            VisionSubsystem.SubsystemState.REEF_ESTIMATES));
+            PivotSubsystem.State.LOW_SCORING,
+            ElevatorSubsystem.State.L1,
+            FunnelSubsystem.State.DOWN));
     goalToStates.put(
         Goal.L2_ALGAE,
         new GoalStates(
-            PivotSubsystem.SubsystemState.ALGAE_INTAKE,
-            ElevatorSubsystem.SubsystemState.L2_ALGAE,
-            FunnelSubsystem.SubsystemState.DOWN,
-            VisionSubsystem.SubsystemState.REEF_ESTIMATES));
+            PivotSubsystem.State.ALGAE_INTAKE,
+            ElevatorSubsystem.State.L2_ALGAE,
+            FunnelSubsystem.State.DOWN));
     goalToStates.put(
         Goal.L3_ALGAE,
         new GoalStates(
-            PivotSubsystem.SubsystemState.ALGAE_INTAKE,
-            ElevatorSubsystem.SubsystemState.L3_ALGAE,
-            FunnelSubsystem.SubsystemState.DOWN,
-            VisionSubsystem.SubsystemState.REEF_ESTIMATES));
+            PivotSubsystem.State.ALGAE_INTAKE,
+            ElevatorSubsystem.State.L3_ALGAE,
+            FunnelSubsystem.State.DOWN));
     goalToStates.put(
         Goal.PROCESSOR,
         new GoalStates(
-            PivotSubsystem.SubsystemState.PROCESSOR_SCORING,
-            ElevatorSubsystem.SubsystemState.PROCESSOR,
-            FunnelSubsystem.SubsystemState.DOWN,
-            VisionSubsystem.SubsystemState.ALL_ESTIMATES));
+            PivotSubsystem.State.PROCESSOR_SCORING,
+            ElevatorSubsystem.State.PROCESSOR,
+            FunnelSubsystem.State.DOWN));
     goalToStates.put(
         Goal.NET,
         new GoalStates(
-            PivotSubsystem.SubsystemState.NET_SCORING,
-            ElevatorSubsystem.SubsystemState.NET,
-            FunnelSubsystem.SubsystemState.DOWN,
-            VisionSubsystem.SubsystemState.ALL_ESTIMATES));
+            PivotSubsystem.State.NET_SCORING,
+            ElevatorSubsystem.State.NET,
+            FunnelSubsystem.State.DOWN));
     goalToStates.put(
         Goal.FUNNEL,
         new GoalStates(
-            PivotSubsystem.SubsystemState.FUNNEL_INTAKE,
-            ElevatorSubsystem.SubsystemState.DEFAULT,
-            FunnelSubsystem.SubsystemState.UP,
-            VisionSubsystem.SubsystemState.ALL_ESTIMATES));
+            PivotSubsystem.State.FUNNEL_INTAKE,
+            ElevatorSubsystem.State.DEFAULT,
+            FunnelSubsystem.State.UP));
     goalToStates.put(
         Goal.FLOOR,
         new GoalStates(
-            PivotSubsystem.SubsystemState.GROUND_INTAKE,
-            ElevatorSubsystem.SubsystemState.DEFAULT,
-            FunnelSubsystem.SubsystemState.DOWN,
-            VisionSubsystem.SubsystemState.ALL_ESTIMATES));
+            PivotSubsystem.State.GROUND_INTAKE,
+            ElevatorSubsystem.State.DEFAULT,
+            FunnelSubsystem.State.DOWN));
     goalToStates.put(
         Goal.CLIMBING,
         new GoalStates(
-            PivotSubsystem.SubsystemState.AVOID_CLIMBER,
-            ElevatorSubsystem.SubsystemState.DEFAULT,
-            FunnelSubsystem.SubsystemState.DOWN,
-            VisionSubsystem.SubsystemState.ALL_ESTIMATES));
+            PivotSubsystem.State.AVOID_CLIMBER,
+            ElevatorSubsystem.State.DEFAULT,
+            FunnelSubsystem.State.DOWN));
     goalToStates.put(
         Goal.FINISH,
         new GoalStates(
-            PivotSubsystem.SubsystemState.FUNNEL_INTAKE,
-            ElevatorSubsystem.SubsystemState.DEFAULT,
-            FunnelSubsystem.SubsystemState.UP,
-            VisionSubsystem.SubsystemState.ALL_ESTIMATES));
+            PivotSubsystem.State.FUNNEL_INTAKE,
+            ElevatorSubsystem.State.DEFAULT,
+            FunnelSubsystem.State.UP));
 
     setGoal(currentGoal);
   }
@@ -176,22 +166,22 @@ public class Superstructure extends SubsystemBase {
     if (DriverStation.isDisabled()) return;
 
     // Unfreeze subsystems if safe
-    if (elevator.isFrozen() && pivot.isOutsideElevator()) {
-      elevator.unfreeze();
-      elevator.setDesiredState(desiredElevatorState);
+    if (pivot.isOutsideElevator()) {
+      elevator.setState(desiredElevatorState);
     }
 
-    if (pivot.getCurrentState() == PivotSubsystem.SubsystemState.AVOID_ELEVATOR
+    if (pivot.getState() == PivotSubsystem.State.AVOID_ELEVATOR
         && pivot.isOutsideElevator()
         && (elevator.isAtSetpoint()
-            || desiredPivotState.position < Constants.PivotConstants.INSIDE_ELEVATOR_ANGLE)) {
-      pivot.unfreeze();
-      pivot.setDesiredState(desiredPivotState);
+            || desiredPivotState.position.getRotations()
+                < Constants.PivotConstants.INSIDE_ELEVATOR_ANGLE)) {
+      // pivot.unfreeze()
+      pivot.setState(desiredPivotState);
     }
 
     if (climber.getPosition() > Constants.ClimberConstants.CLIMB_FULL_THRESHOLD
-        && climber.getCurrentState() == ClimberSubsystem.SubsystemState.CLIMB_IN) {
-      climber.setDesiredState(ClimberSubsystem.SubsystemState.CLIMB_IN_FULL);
+        && climber.getState() == ClimberSubsystem.State.CLIMB_IN) {
+      climber.setState(ClimberSubsystem.State.CLIMB_IN_FULL);
     }
 
     Pose3d[] elevatorPoses = elevator.getComponentPoses();
@@ -205,6 +195,18 @@ public class Superstructure extends SubsystemBase {
         });
   }
 
+  @AutoLogOutput(key = "Superstructure/Components")
+  public Pose3d[] getComponents() {
+    Pose3d[] elevatorPoses = elevator.getComponentPoses();
+    return new Pose3d[] {
+      funnel.getComponentPose(),
+      elevatorPoses[0],
+      elevatorPoses[1],
+      pivot.getComponentPose(elevatorPoses[1]), // Feed in carriage pose for height
+      climber.getComponentPose()
+    };
+  }
+
   private void setGoal(Goal goal) {
     this.currentGoal = goal;
     GoalStates states = goalToStates.get(goal);
@@ -214,34 +216,33 @@ public class Superstructure extends SubsystemBase {
     if (states.pivotState != null) {
       desiredPivotState = states.pivotState;
       if (safetyChecks) {
-        pivot.setDesiredState(PivotSubsystem.SubsystemState.AVOID_ELEVATOR);
-        pivot.freeze();
+        pivot.setState(PivotSubsystem.State.AVOID_ELEVATOR);
+        // pivot.freeze();
       } else {
-        pivot.setDesiredState(states.pivotState);
+        pivot.setState(states.pivotState);
       }
     }
 
     if (states.elevatorState != null) {
       desiredElevatorState = states.elevatorState;
       if (states.pivotState != null && safetyChecks) {
-        elevator.setDesiredState(ElevatorSubsystem.SubsystemState.IDLE);
-        elevator.freeze();
+        elevator.setState(ElevatorSubsystem.State.IDLE);
       } else {
-        elevator.setDesiredState(states.elevatorState);
+        elevator.setState(states.elevatorState);
       }
     }
 
-    if (states.funnelState != null) funnel.setDesiredState(states.funnelState);
-    if (states.visionState != null) vision.setDesiredState(states.visionState);
+    if (states.funnelState != null) funnel.setState(states.funnelState);
 
     currentGoalPub.set(goal.name());
   }
 
   private boolean shouldEnableSafetyChecks(
-      PivotSubsystem.SubsystemState pivotState, ElevatorSubsystem.SubsystemState elevatorState) {
-    if (elevatorState == elevator.getCurrentState()) return false;
-    return !(pivot.getCurrentState().position < Constants.PivotConstants.INSIDE_ELEVATOR_ANGLE
-        && pivotState.position < Constants.PivotConstants.INSIDE_ELEVATOR_ANGLE);
+      PivotSubsystem.State pivotState, ElevatorSubsystem.State elevatorState) {
+    if (elevatorState == elevator.getState()) return false;
+    return !(pivot.getState().position.getRotations()
+            < Constants.PivotConstants.INSIDE_ELEVATOR_ANGLE
+        && pivotState.position.getRotations() < Constants.PivotConstants.INSIDE_ELEVATOR_ANGLE);
   }
 
   public Command setGoalCommand(Goal goal) {

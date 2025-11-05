@@ -1,34 +1,57 @@
 package frc.robot;
 
 import com.ctre.phoenix6.Utils;
-import com.ctre.phoenix6.swerve.SwerveModule;
-import com.ctre.phoenix6.swerve.SwerveRequest.*;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.units.Units;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.commands.DriveCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.*;
-import frc.robot.subsystems.swerve.DriverAssist;
-import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.subsystems.climber.ClimberIO;
+import frc.robot.subsystems.climber.ClimberIOSim;
+import frc.robot.subsystems.climber.ClimberIOTalonFX;
+import frc.robot.subsystems.climber.ClimberSubsystem;
+import frc.robot.subsystems.elevator.ElevatorIO;
+import frc.robot.subsystems.elevator.ElevatorIOSim;
+import frc.robot.subsystems.elevator.ElevatorIOTalonFX;
+import frc.robot.subsystems.elevator.ElevatorSubsystem;
+import frc.robot.subsystems.funnel.FunnelIO;
+import frc.robot.subsystems.funnel.FunnelIOSim;
+import frc.robot.subsystems.funnel.FunnelIOTalonFX;
+import frc.robot.subsystems.funnel.FunnelSubsystem;
+import frc.robot.subsystems.intake.IntakeIO;
+import frc.robot.subsystems.intake.IntakeIOSim;
+import frc.robot.subsystems.intake.IntakeIOTalonFX;
+import frc.robot.subsystems.intake.IntakeSubsystem;
+import frc.robot.subsystems.pivot.PivotIO;
+import frc.robot.subsystems.pivot.PivotIOSim;
+import frc.robot.subsystems.pivot.PivotIOTalonFX;
+import frc.robot.subsystems.pivot.PivotSubsystem;
+import frc.robot.subsystems.swerve.DriveSubsystem;
+import frc.robot.subsystems.swerve.gyro.GyroIO;
+import frc.robot.subsystems.swerve.gyro.GyroIOPigeon2;
+import frc.robot.subsystems.swerve.gyro.GyroIOSim;
+import frc.robot.subsystems.swerve.module.ModuleIO;
+import frc.robot.subsystems.swerve.module.ModuleIOSim;
+import frc.robot.subsystems.swerve.module.ModuleIOTalonFX;
+import frc.robot.subsystems.vision.*;
 import java.io.File;
 import java.util.Map;
-import java.util.Optional;
+import org.ironmaple.simulation.SimulatedArena;
+import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
   private final CommandXboxController driver = new CommandXboxController(0);
   private final CommandXboxController functions = new CommandXboxController(1);
 
-  private final SwerveSubsystem drivetrain;
+  private final DriveSubsystem drivetrain;
   private final ClimberSubsystem climber;
   private final PivotSubsystem pivot;
   private final ElevatorSubsystem elevator;
@@ -36,66 +59,101 @@ public class RobotContainer {
   private final IntakeSubsystem intake;
   private final VisionSubsystem vision;
   private final Superstructure superstructure;
-  private final double maxSpeed = TunerConstants.kSpeedAt12Volts.in(Units.MetersPerSecond);
-  private final double maxAngularRate = Math.toRadians(360);
 
-  private final FieldCentric fieldCentric;
-  private final RobotCentric robotCentric;
-  private final DriverAssist driverAssist;
-  private final SwerveDriveBrake brake;
-  private final PointWheelsAt point;
+  private LoggedDashboardChooser<Command> autoChooser;
 
-  private SendableChooser<Command> autoChooser;
+  public static SwerveDriveSimulation swerveDriveSimulation =
+      new SwerveDriveSimulation(
+          DriveSubsystem.driveTrainSimulationConfig, new Pose2d(3, 3, Rotation2d.kZero));
+
+  static {
+    SimulatedArena.getInstance().addDriveTrainSimulation(swerveDriveSimulation);
+  }
 
   public RobotContainer() {
-    // Subsystems
-    drivetrain = TunerConstants.createDrivetrain();
-    climber = new ClimberSubsystem();
-    pivot = new PivotSubsystem();
-    elevator = new ElevatorSubsystem();
-    funnel = new FunnelSubsystem();
-    intake = new IntakeSubsystem();
-    vision =
-        new VisionSubsystem(
-            drivetrain,
-            Constants.VisionConstants.FRONT_RIGHT,
-            Constants.VisionConstants.FRONT_CENTER,
-            Constants.VisionConstants.FRONT_LEFT);
+    switch (Constants.currentMode) {
+      case REAL:
+        // Real robot, instantiate hardware IO implementations
+        drivetrain =
+            new DriveSubsystem(
+                new GyroIOPigeon2(),
+                new ModuleIOTalonFX(TunerConstants.FrontLeft),
+                new ModuleIOTalonFX(TunerConstants.FrontRight),
+                new ModuleIOTalonFX(TunerConstants.BackLeft),
+                new ModuleIOTalonFX(TunerConstants.BackRight),
+                (robotPose) -> {});
+        climber = new ClimberSubsystem(new ClimberIOTalonFX());
+        pivot = new PivotSubsystem(new PivotIOTalonFX());
+        elevator = new ElevatorSubsystem(new ElevatorIOTalonFX());
+        funnel = new FunnelSubsystem(new FunnelIOTalonFX());
+        intake = new IntakeSubsystem(new IntakeIOTalonFX());
+        vision =
+            new VisionSubsystem(
+                drivetrain::addVisionMeasurement,
+                new VisionIOLimelight(VisionConstants.frontCamera, drivetrain::getRotation),
+                new VisionIOLimelight(VisionConstants.frontLeftCamera, drivetrain::getRotation),
+                new VisionIOLimelight(VisionConstants.frontRightCamera, drivetrain::getRotation));
+        break;
+
+      case SIM:
+        // Sim robot, instantiate physics sim IO implementations
+        drivetrain =
+            new DriveSubsystem(
+                new GyroIOSim(swerveDriveSimulation.getGyroSimulation()),
+                new ModuleIOSim(swerveDriveSimulation.getModules()[0]),
+                new ModuleIOSim(swerveDriveSimulation.getModules()[1]),
+                new ModuleIOSim(swerveDriveSimulation.getModules()[2]),
+                new ModuleIOSim(swerveDriveSimulation.getModules()[3]),
+                (robotPose) -> swerveDriveSimulation.setSimulationWorldPose(robotPose));
+        drivetrain.setPose(swerveDriveSimulation.getSimulatedDriveTrainPose());
+        climber = new ClimberSubsystem(new ClimberIOSim());
+        pivot = new PivotSubsystem(new PivotIOSim());
+        elevator = new ElevatorSubsystem(new ElevatorIOSim());
+        funnel = new FunnelSubsystem(new FunnelIOSim());
+        intake = new IntakeSubsystem(new IntakeIOSim());
+        vision =
+            new VisionSubsystem(
+                drivetrain::addVisionMeasurement,
+                VisionIOPhotonVisionSim.ofLimelight4(
+                    VisionConstants.frontCamera,
+                    VisionConstants.robotToFrontCam,
+                    swerveDriveSimulation::getSimulatedDriveTrainPose),
+                VisionIOPhotonVisionSim.ofLimelight3A(
+                    VisionConstants.frontLeftCamera,
+                    VisionConstants.robotToFrontLeftCam,
+                    swerveDriveSimulation::getSimulatedDriveTrainPose),
+                VisionIOPhotonVisionSim.ofLimelight3A(
+                    VisionConstants.frontRightCamera,
+                    VisionConstants.robotToFrontRightCam,
+                    swerveDriveSimulation::getSimulatedDriveTrainPose));
+        break;
+
+      default:
+        // Replayed robot, disable IO implementations
+        drivetrain =
+            new DriveSubsystem(
+                new GyroIO() {},
+                new ModuleIO() {},
+                new ModuleIO() {},
+                new ModuleIO() {},
+                new ModuleIO() {},
+                (robotPose) -> {});
+        climber = new ClimberSubsystem(new ClimberIO() {});
+        pivot = new PivotSubsystem(new PivotIO() {});
+        elevator = new ElevatorSubsystem(new ElevatorIO() {});
+        funnel = new FunnelSubsystem(new FunnelIO() {});
+        intake = new IntakeSubsystem(new IntakeIO() {});
+        vision =
+            new VisionSubsystem(
+                drivetrain::addVisionMeasurement,
+                new VisionIO() {},
+                new VisionIO() {},
+                new VisionIO() {});
+        break;
+    }
+
     superstructure =
         new Superstructure(drivetrain, pivot, elevator, funnel, vision, climber, intake);
-
-    // Swerve Requests
-    fieldCentric =
-        new FieldCentric()
-            .withDeadband(0)
-            .withRotationalDeadband(0)
-            .withDriveRequestType(SwerveModule.DriveRequestType.Velocity)
-            .withSteerRequestType(SwerveModule.SteerRequestType.Position);
-
-    robotCentric =
-        new RobotCentric()
-            .withDeadband(0)
-            .withRotationalDeadband(0)
-            .withDriveRequestType(SwerveModule.DriveRequestType.Velocity)
-            .withSteerRequestType(SwerveModule.SteerRequestType.Position);
-
-    driverAssist =
-        new DriverAssist()
-            .withDeadband(maxSpeed * 0.01)
-            .withRotationalDeadband(maxAngularRate * 0.02)
-            .withDriveRequestType(SwerveModule.DriveRequestType.Velocity)
-            .withSteerRequestType(SwerveModule.SteerRequestType.Position)
-            .withTranslationPID(
-                Constants.AutoAlignConstants.TRANSLATION_P,
-                Constants.AutoAlignConstants.TRANSLATION_I,
-                Constants.AutoAlignConstants.TRANSLATION_D)
-            .withHeadingPID(
-                Constants.AutoAlignConstants.HEADING_P,
-                Constants.AutoAlignConstants.HEADING_I,
-                Constants.AutoAlignConstants.HEADING_D);
-
-    brake = new SwerveDriveBrake();
-    point = new PointWheelsAt();
 
     setupControllerBindings();
     setupPathPlanner();
@@ -105,66 +163,56 @@ public class RobotContainer {
 
     // DRIVE CONTROLLER
     drivetrain.setDefaultCommand(
-        drivetrain.applyRequest(
-            () ->
-                fieldCentric
-                    .withVelocityX(-driver.getLeftY() * maxSpeed)
-                    .withVelocityY(-driver.getLeftX() * maxSpeed)
-                    .withRotationalRate(-driver.getRightX() * maxAngularRate)));
+        DriveCommands.fieldRelative(
+            drivetrain,
+            () -> -driver.getLeftY(),
+            () -> -driver.getLeftX(),
+            () -> -driver.getRightX()));
 
     driver
         .leftBumper()
         .whileTrue(
-            drivetrain.applyRequest(
-                () ->
-                    robotCentric
-                        .withVelocityX(-driver.getLeftY() * maxSpeed)
-                        .withVelocityY(-driver.getLeftX() * maxSpeed)
-                        .withRotationalRate(-driver.getRightX() * maxAngularRate)));
+            DriveCommands.robotRelative(
+                drivetrain,
+                () -> -driver.getLeftY(),
+                () -> -driver.getLeftX(),
+                () -> -driver.getRightX()));
 
     driver
         .rightBumper()
-        .whileTrue(intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.CORAL_OUTPUT))
-        .onFalse(intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.HOLD));
+        .whileTrue(intake.setDesiredStateCommand(IntakeSubsystem.State.CORAL_OUTPUT))
+        .onFalse(intake.setDesiredStateCommand(IntakeSubsystem.State.HOLD));
 
-    driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
-    driver
-        .b()
-        .whileTrue(
-            drivetrain.applyRequest(
-                () ->
-                    point.withModuleDirection(
-                        new Rotation2d(-driver.getLeftY(), -driver.getLeftX()))));
-
-    driver
-        .rightTrigger()
-        .onTrue(
-            drivetrain.runOnce(
-                () ->
-                    driverAssist.setTargetPose(
-                        drivetrain.getClosestBranch(SwerveSubsystem.BranchSide.RIGHT))))
-        .whileTrue(
-            drivetrain.applyRequest(
-                () ->
-                    driverAssist
-                        .withVelocityX(-driver.getLeftY() * maxSpeed)
-                        .withVelocityY(-driver.getLeftX() * maxSpeed)));
+    driver.a().whileTrue(DriveCommands.brakeWithX(drivetrain));
 
     driver
         .leftTrigger()
-        .onTrue(
-            drivetrain.runOnce(
-                () ->
-                    driverAssist.setTargetPose(
-                        drivetrain.getClosestBranch(SwerveSubsystem.BranchSide.LEFT))))
         .whileTrue(
-            drivetrain.applyRequest(
-                () ->
-                    driverAssist
-                        .withVelocityX(-driver.getLeftY() * maxSpeed)
-                        .withVelocityY(-driver.getLeftX() * maxSpeed)));
+            DriveCommands.alignToClosestReefBranch(
+                drivetrain,
+                DriveCommands.BranchSide.LEFT,
+                () -> -driver.getLeftY(),
+                () -> -driver.getLeftX()));
 
-    driver.start().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+    driver
+        .rightTrigger()
+        .whileTrue(
+            DriveCommands.alignToClosestReefBranch(
+                drivetrain,
+                DriveCommands.BranchSide.RIGHT,
+                () -> -driver.getLeftY(),
+                () -> -driver.getLeftX()));
+
+    // Reset gyro to 0 when start button is pressed.
+    driver
+        .start()
+        .onTrue(
+            Commands.runOnce(
+                    () ->
+                        drivetrain.setPose(
+                            new Pose2d(drivetrain.getPose().getTranslation(), new Rotation2d())),
+                    drivetrain)
+                .ignoringDisable(true));
 
     // FUNCTION CONTROLLER
     // Map all triggers to respective superstructure goal
@@ -193,9 +241,8 @@ public class RobotContainer {
             .whileTrue(
                 superstructure
                     .setGoalCommand(goal)
-                    .alongWith(
-                        intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.ALGAE_INTAKE)))
-            .onFalse(intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.ALGAE_HOLD));
+                    .alongWith(intake.setDesiredStateCommand(IntakeSubsystem.State.ALGAE_INTAKE)))
+            .onFalse(intake.setDesiredStateCommand(IntakeSubsystem.State.ALGAE_HOLD));
       } else {
         condition.onTrue(superstructure.setGoalCommand(goal));
       }
@@ -207,22 +254,22 @@ public class RobotContainer {
         .onTrue(
             Commands.parallel(
                 superstructure.setGoalCommand(Superstructure.Goal.FUNNEL),
-                intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.FUNNEL_INTAKE)))
+                intake.setDesiredStateCommand(IntakeSubsystem.State.FUNNEL_INTAKE)))
         .onFalse(
             Commands.parallel(
                 superstructure.setGoalCommand(Superstructure.Goal.DEFAULT),
-                intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.HOLD)));
+                intake.setDesiredStateCommand(IntakeSubsystem.State.HOLD)));
     functions
         .leftBumper()
         .and(functions.back())
         .whileTrue(
             Commands.parallel(
                 superstructure.setGoalCommand(Superstructure.Goal.FLOOR),
-                intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.CORAL_INTAKE)))
+                intake.setDesiredStateCommand(IntakeSubsystem.State.CORAL_INTAKE)))
         .onFalse(
             Commands.parallel(
                 superstructure.setGoalCommand(Superstructure.Goal.DEFAULT),
-                intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.HOLD)));
+                intake.setDesiredStateCommand(IntakeSubsystem.State.HOLD)));
 
     // Climbing
     functions
@@ -231,9 +278,9 @@ public class RobotContainer {
         .or(functions.povDownLeft())
         .onTrue(
             Commands.parallel(
-                climber.setDesiredStateCommand(ClimberSubsystem.SubsystemState.CLIMB_OUT),
+                climber.setStateCommand(ClimberSubsystem.State.CLIMB_OUT),
                 superstructure.setGoalCommand(Superstructure.Goal.CLIMBING)))
-        .onFalse(climber.setDesiredStateCommand(ClimberSubsystem.SubsystemState.STOP));
+        .onFalse(climber.setStateCommand(ClimberSubsystem.State.STOP));
 
     functions
         .povRight()
@@ -241,9 +288,9 @@ public class RobotContainer {
         .or(functions.povDownRight())
         .onTrue(
             Commands.parallel(
-                climber.setDesiredStateCommand(ClimberSubsystem.SubsystemState.CLIMB_IN),
+                climber.setStateCommand(ClimberSubsystem.State.CLIMB_IN),
                 superstructure.setGoalCommand(Superstructure.Goal.CLIMBING)))
-        .onFalse(climber.setDesiredStateCommand(ClimberSubsystem.SubsystemState.STOP));
+        .onFalse(climber.setStateCommand(ClimberSubsystem.State.STOP));
 
     functions.povUp().onTrue(superstructure.setGoalCommand(Superstructure.Goal.FINISH));
   }
@@ -273,24 +320,24 @@ public class RobotContainer {
         "Floor", superstructure.setGoalCommand(Superstructure.Goal.FLOOR));
 
     NamedCommands.registerCommand(
-        "Hold", intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.HOLD));
+        "Hold", intake.setDesiredStateCommand(IntakeSubsystem.State.HOLD));
     NamedCommands.registerCommand(
-        "Coral Intake", intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.CORAL_INTAKE));
+        "Coral Intake", intake.setDesiredStateCommand(IntakeSubsystem.State.CORAL_INTAKE));
     NamedCommands.registerCommand(
-        "Coral Output", intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.CORAL_OUTPUT));
+        "Coral Output", intake.setDesiredStateCommand(IntakeSubsystem.State.CORAL_OUTPUT));
     NamedCommands.registerCommand(
-        "Algae Intake", intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.ALGAE_INTAKE));
+        "Algae Intake", intake.setDesiredStateCommand(IntakeSubsystem.State.ALGAE_INTAKE));
     NamedCommands.registerCommand(
-        "Algae Output", intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.ALGAE_OUTPUT));
+        "Algae Output", intake.setDesiredStateCommand(IntakeSubsystem.State.ALGAE_OUTPUT));
     NamedCommands.registerCommand(
         "Funnel Intake",
         intake
-            .setDesiredStateCommand(IntakeSubsystem.SubsystemState.FUNNEL_INTAKE)
+            .setDesiredStateCommand(IntakeSubsystem.State.FUNNEL_INTAKE)
             .repeatedly()
             .until(() -> (intake.hasCoral() || Utils.isSimulation())));
 
     // Auto chooser
-    autoChooser = new SendableChooser<>();
+    autoChooser = new LoggedDashboardChooser<>("Selected Auto");
     File autosFolder = new File(Filesystem.getDeployDirectory() + "/pathplanner/autos");
     for (File file : autosFolder.listFiles()) {
       if (!file.getName().endsWith(".auto") || file.getName().equals(".DS_Store")) continue;
@@ -298,40 +345,15 @@ public class RobotContainer {
       autoChooser.addOption(name, new PathPlannerAuto(name, false));
       autoChooser.addOption(name + " (Mirrored)", new PathPlannerAuto(name, true));
     }
-    autoChooser.setDefaultOption("None", Commands.none());
+    autoChooser.addDefaultOption("None", Commands.none());
     autoChooser.addOption(
         "Basic Leave",
-        drivetrain.applyRequest(() -> robotCentric.withVelocityX(1)).withTimeout(1.0));
-    autoChooser.onChange((cmd) -> setCorrectSwervePosition());
-    SmartDashboard.putData("Selected Auto", autoChooser);
-  }
-
-  private void setCorrectSwervePosition() {
-    Object selected = autoChooser.getSelected();
-    if (selected instanceof PathPlannerAuto auto) {
-      Pose2d startingPose = auto.getStartingPose();
-      drivetrain.resetPose(flipPoseIfNeeded(startingPose));
-      drivetrain.resetRotation(
-          startingPose.getRotation().plus(drivetrain.getOperatorForwardDirection()));
-    }
-  }
-
-  private static Pose2d flipPoseIfNeeded(Pose2d pose) {
-    Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();
-    if (alliance.isPresent() && alliance.get() == DriverStation.Alliance.Red) {
-      double flippedX = Constants.FIELD_LAYOUT.getFieldLength() - pose.getX();
-      double flippedY = Constants.FIELD_LAYOUT.getFieldWidth() - pose.getY();
-      Rotation2d flippedRotation = pose.getRotation().plus(Rotation2d.k180deg);
-      return new Pose2d(flippedX, flippedY, flippedRotation);
-    }
-    return pose;
+        drivetrain
+            .run(() -> DriveCommands.robotRelative(drivetrain, () -> 1, () -> 0, () -> 0))
+            .withTimeout(1.0));
   }
 
   public Command getAutonomousCommand() {
-    return autoChooser.getSelected();
-  }
-
-  public void setVisionThrottle(int throttle) {
-    vision.setThrottle(throttle);
+    return autoChooser.get();
   }
 }

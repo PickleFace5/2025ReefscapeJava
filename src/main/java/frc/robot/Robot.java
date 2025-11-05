@@ -14,20 +14,50 @@ import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.lib.Elastic;
+import org.ironmaple.simulation.SimulatedArena;
+import org.littletonrobotics.junction.LogFileUtil;
+import org.littletonrobotics.junction.LoggedRobot;
+import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.NT4Publisher;
+import org.littletonrobotics.junction.wpilog.WPILOGReader;
+import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
-public class Robot extends TimedRobot {
+public class Robot extends LoggedRobot {
   private Command m_autonomousCommand;
   private final RobotContainer m_robotContainer;
   private final DoublePublisher matchTimePub;
 
   public Robot() {
+    // Set up data receivers & replay source
+    switch (Constants.currentMode) {
+      case REAL:
+        // Running on a real robot, log to a USB stick ("/U/logs")
+        Logger.addDataReceiver(new WPILOGWriter());
+        Logger.addDataReceiver(new NT4Publisher());
+        break;
+
+      case SIM:
+        // Running a physics simulator, log to NT
+        Logger.addDataReceiver(new NT4Publisher());
+        break;
+
+      case REPLAY:
+        // Replaying a log, set up replay source
+        setUseTiming(false); // Run as fast as possible
+        String logPath = LogFileUtil.findReplayLog();
+        Logger.setReplaySource(new WPILOGReader(logPath));
+        Logger.addDataReceiver(new WPILOGWriter(LogFileUtil.addPathSuffix(logPath, "_replay")));
+        break;
+    }
+
+    // Start AdvantageKit logger
+    Logger.start();
+
     DriverStation.silenceJoystickConnectionWarning(!DriverStation.isFMSAttached());
     m_robotContainer = new RobotContainer();
 
     SignalLogger.enableAutoLogging(false);
     SignalLogger.stop();
-    DataLogManager.start();
-    DriverStation.startDataLog(DataLogManager.getLog());
 
     CameraServer.startAutomaticCapture();
 
@@ -47,17 +77,13 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledInit() {
-    m_robotContainer.setVisionThrottle(150);
-  }
+  public void disabledInit() {}
 
   @Override
   public void disabledPeriodic() {}
 
   @Override
-  public void disabledExit() {
-    m_robotContainer.setVisionThrottle(0);
-  }
+  public void disabledExit() {}
 
   @Override
   public void autonomousInit() {
@@ -70,6 +96,10 @@ public class Robot extends TimedRobot {
     }
 
     Elastic.selectTab("Autonomous");
+
+    if (RobotBase.isSimulation()) {
+      SimulatedArena.getInstance().resetFieldForAuto();
+    }
   }
 
   @Override
@@ -117,4 +147,22 @@ public class Robot extends TimedRobot {
 
   @Override
   public void testExit() {}
+
+  @Override
+  public void simulationInit() {
+    SimulatedArena.getInstance().resetFieldForAuto();
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    SimulatedArena.getInstance().simulationPeriodic();
+
+    Logger.recordOutput(
+        "FieldSimulation/RobotPosition",
+        RobotContainer.swerveDriveSimulation.getSimulatedDriveTrainPose());
+    Logger.recordOutput(
+        "FieldSimulation/Coral", SimulatedArena.getInstance().getGamePiecesArrayByType("Coral"));
+    Logger.recordOutput(
+        "FieldSimulation/Algae", SimulatedArena.getInstance().getGamePiecesArrayByType("Algae"));
+  }
 }

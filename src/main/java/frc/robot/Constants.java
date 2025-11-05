@@ -4,8 +4,23 @@ import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.wpilibj.RobotBase;
 
 public class Constants {
+  public static final Mode simMode = Mode.SIM;
+  public static final Mode currentMode = RobotBase.isReal() ? Mode.REAL : simMode;
+
+  public enum Mode {
+    /** Running on a real robot. */
+    REAL,
+
+    /** Running a physics simulator. */
+    SIM,
+
+    /** Replaying from a log file. */
+    REPLAY
+  }
+
   public static final AprilTagFieldLayout FIELD_LAYOUT =
       AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeWelded);
 
@@ -13,7 +28,7 @@ public class Constants {
     public static final int LEFT_ELEVATOR_TALON = 10;
     public static final int RIGHT_ELEVATOR_TALON = 11;
     public static final int INTAKE_TALON = 12;
-    public static final int LEFT_PIVOT_TALON = 13;
+    public static final int PIVOT_TALON = 13;
     public static final int CLIMB_TALON = 15;
     public static final int FUNNEL_TALON = 22;
 
@@ -149,13 +164,6 @@ public class Constants {
 
     public static final int SUPPLY_CURRENT = 20;
     public static final int STATOR_CURRENT = 50;
-  }
-
-  public static class VisionConstants {
-    public static final String FRONT_LEFT = "limelight-fl";
-    public static final String FRONT_RIGHT = "limelight-fr";
-    public static final String FRONT_CENTER = "limelight-front";
-    public static final String BACK_CENTER = "limelight-back";
   }
 
   public static class AutoAlignConstants {

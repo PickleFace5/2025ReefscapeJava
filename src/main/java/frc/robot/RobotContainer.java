@@ -355,6 +355,12 @@ public class RobotContainer {
             .withTimeout(1.0));
   }
 
+  public void readyRobotForMatch() {
+    if (autoChooser.get() instanceof PathPlannerAuto auto) {
+      drivetrain.setPose(auto.getStartingPose());
+    }
+  }
+
   public Command getAutonomousCommand() {
     return autoChooser.get();
   }

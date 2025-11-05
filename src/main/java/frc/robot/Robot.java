@@ -27,6 +27,8 @@ public class Robot extends LoggedRobot {
   private final RobotContainer m_robotContainer;
   private final DoublePublisher matchTimePub;
 
+  private Command currentAuto;
+
   public Robot() {
     // Set up data receivers & replay source
     switch (Constants.currentMode) {
@@ -80,7 +82,14 @@ public class Robot extends LoggedRobot {
   public void disabledInit() {}
 
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+    // Workaround: Check to see if the autoChooser has a new auto, then set the robot pose,
+    if (currentAuto != m_robotContainer.getAutonomousCommand()) {
+      m_robotContainer.readyRobotForMatch();
+      currentAuto = m_robotContainer.getAutonomousCommand();
+      System.out.println("Robot pose set for auto.");
+    }
+  }
 
   @Override
   public void disabledExit() {}

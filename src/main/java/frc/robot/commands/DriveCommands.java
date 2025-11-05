@@ -173,12 +173,16 @@ public class DriveCommands {
       DoubleSupplier xSupplier,
       DoubleSupplier ySupplier) {
 
-    final PIDController translationController = new PIDController(2.5, 0.0, 0.1);
+    final PIDController translationController =
+        new PIDController(
+            Constants.AutoAlignConstants.TRANSLATION_P,
+            Constants.AutoAlignConstants.TRANSLATION_I,
+            Constants.AutoAlignConstants.TRANSLATION_D);
     final ProfiledPIDController rotationController =
         new ProfiledPIDController(
-            ANGLE_KP,
-            0.0,
-            ANGLE_KD,
+            Constants.AutoAlignConstants.HEADING_P,
+            Constants.AutoAlignConstants.HEADING_I,
+            Constants.AutoAlignConstants.HEADING_D,
             new TrapezoidProfile.Constraints(ANGLE_MAX_VELOCITY, ANGLE_MAX_ACCELERATION));
     rotationController.enableContinuousInput(-Math.PI, Math.PI);
 

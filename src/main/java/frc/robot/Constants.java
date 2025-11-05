@@ -171,8 +171,8 @@ public class Constants {
     public static final double TRANSLATION_I = 0;
     public static final double TRANSLATION_D = 0.1;
 
-    public static final double HEADING_P = 1;
+    public static final double HEADING_P = 5;
     public static final double HEADING_I = 0;
-    public static final double HEADING_D = 0.2;
+    public static final double HEADING_D = 0.4;
   }
 }

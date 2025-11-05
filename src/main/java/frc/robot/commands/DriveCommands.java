@@ -155,19 +155,8 @@ public class DriveCommands {
               // Get linear velocity
               Translation2d linearVelocity =
                   getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
-
-              // Apply rotation deadband
-              ChassisSpeeds speeds =
-                  getChassisSpeeds(driveSubsystem, omegaSupplier, linearVelocity);
-              boolean isFlipped =
-                  DriverStation.getAlliance().isPresent()
-                      && DriverStation.getAlliance().get() == Alliance.Red;
               driveSubsystem.runVelocity(
-                  ChassisSpeeds.fromRobotRelativeSpeeds(
-                      speeds,
-                      isFlipped
-                          ? driveSubsystem.getRotation().plus(Rotation2d.kPi)
-                          : driveSubsystem.getRotation()));
+                  getChassisSpeeds(driveSubsystem, omegaSupplier, linearVelocity));
             },
             driveSubsystem)
         .withName("RobotRelativeDrive");

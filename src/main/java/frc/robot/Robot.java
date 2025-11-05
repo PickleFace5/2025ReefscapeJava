@@ -158,11 +158,11 @@ public class Robot extends LoggedRobot {
     SimulatedArena.getInstance().simulationPeriodic();
 
     Logger.recordOutput(
-        "FieldSimulation/RobotPosition",
+        "MapleSim/RobotPosition",
         RobotContainer.swerveDriveSimulation.getSimulatedDriveTrainPose());
     Logger.recordOutput(
-        "FieldSimulation/Coral", SimulatedArena.getInstance().getGamePiecesArrayByType("Coral"));
+        "MapleSim/Coral", SimulatedArena.getInstance().getGamePiecesArrayByType("Coral"));
     Logger.recordOutput(
-        "FieldSimulation/Algae", SimulatedArena.getInstance().getGamePiecesArrayByType("Algae"));
+        "MapleSim/Algae", SimulatedArena.getInstance().getGamePiecesArrayByType("Algae"));
   }
 }

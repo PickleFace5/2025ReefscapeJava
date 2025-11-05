@@ -189,7 +189,7 @@ public class DriveCommands {
     return Commands.runOnce(
             () -> {
               closestBranch = getClosestBranch(driveSubsystem, branchSide);
-              Logger.recordOutput("Odometry/TargetBranch", closestBranch);
+              Logger.recordOutput("Drive/TargetBranch", closestBranch);
             })
         .andThen(
             Commands.run(

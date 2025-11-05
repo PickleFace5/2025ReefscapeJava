@@ -154,8 +154,7 @@ public class RobotContainer {
         break;
     }
 
-    superstructure =
-        new Superstructure(drivetrain, pivot, elevator, funnel, vision, climber, intake);
+    superstructure = new Superstructure(pivot, elevator, funnel, climber);
 
     setupControllerBindings();
     setupPathPlanner();

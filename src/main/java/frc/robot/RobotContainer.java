@@ -154,7 +154,8 @@ public class RobotContainer {
         break;
     }
 
-    superstructure = new Superstructure(pivot, elevator, funnel, climber);
+    superstructure =
+        new Superstructure(drivetrain::getPose, pivot, elevator, funnel, climber, intake);
 
     setupControllerBindings();
     setupPathPlanner();

@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.*;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -9,7 +10,9 @@ import frc.robot.Constants;
 import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
 import frc.robot.subsystems.funnel.FunnelSubsystem;
+import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.pivot.PivotSubsystem;
+import java.util.function.Supplier;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -68,26 +71,37 @@ public class Superstructure extends SubsystemBase {
     }
   }
 
+  private Supplier<Pose2d> robotPoseSupplier;
+
   private final PivotSubsystem pivot;
   private final ElevatorSubsystem elevator;
   private final FunnelSubsystem funnel;
   private final ClimberSubsystem climber;
+  private final IntakeSubsystem intake;
 
   @AutoLogOutput(key = "Superstructure/Goal")
   private Goal currentGoal = Goal.DEFAULT;
+
+  @AutoLogOutput(key = "Superstructure/Current Game Piece")
+  private Pose3d currentGamePiece = new Pose3d();
 
   private PivotSubsystem.State desiredPivotState;
   private ElevatorSubsystem.State desiredElevatorState;
 
   public Superstructure(
+      Supplier<Pose2d> robotPoseSupplier,
       PivotSubsystem pivot,
       ElevatorSubsystem elevator,
       FunnelSubsystem funnel,
-      ClimberSubsystem climber) {
+      ClimberSubsystem climber,
+      IntakeSubsystem intake) {
+    setName("Superstructure");
+    this.robotPoseSupplier = robotPoseSupplier;
     this.pivot = pivot;
     this.elevator = elevator;
     this.funnel = funnel;
     this.climber = climber;
+    this.intake = intake;
 
     setGoal(currentGoal);
   }
@@ -114,14 +128,37 @@ public class Superstructure extends SubsystemBase {
       }
     }
 
+    // Update component poses
     Pose3d[] elevatorPoses = elevator.getComponentPoses();
+    Pose3d pivotPose = pivot.getComponentPose(elevatorPoses[1]); // Feed in carriage pose for height
     Logger.recordOutput(
         "Superstructure/Components",
         funnel.getComponentPose(),
         elevatorPoses[0],
         elevatorPoses[1],
-        pivot.getComponentPose(elevatorPoses[1]), // Feed in carriage pose for height
+        pivotPose,
         climber.getComponentPose());
+
+    // If we have a game piece, display it in the robot
+    if (intake.hasCoral()) {
+
+      // Convert robotPose to Pose3d (for some reason it's negated so invert it)
+      Pose3d robotPose = new Pose3d(robotPoseSupplier.get()).times(-1);
+
+      currentGamePiece =
+          pivotPose
+              .transformBy(
+                  new Transform3d(
+                      // Distance from origin to bumper + coral length - whatever to fix my poor math
+                      0.134856 + 0.301625 - 0.055,
+                      0,
+                      0,
+                      // Rotation from ground plane to 0 position pivot angle (aka straight sideways)
+                      new Rotation3d(0.0, Units.degreesToRadians(-29.20274), 0.0)))
+              .relativeTo(robotPose);
+    } else {
+      currentGamePiece = new Pose3d();
+    }
   }
 
   private void setGoal(Goal goal) {

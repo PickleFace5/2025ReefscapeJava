@@ -1,18 +1,25 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.*;
+
 import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.RobotContainer;
 import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
 import frc.robot.subsystems.funnel.FunnelSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.pivot.PivotSubsystem;
-import java.util.function.Supplier;
+import frc.robot.subsystems.swerve.DriveSubsystem;
+import org.ironmaple.simulation.SimulatedArena;
+import org.ironmaple.simulation.drivesims.AbstractDriveTrainSimulation;
+import org.ironmaple.simulation.seasonspecific.reefscape2025.ReefscapeCoralOnFly;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -71,8 +78,7 @@ public class Superstructure extends SubsystemBase {
     }
   }
 
-  private Supplier<Pose2d> robotPoseSupplier;
-
+  private final DriveSubsystem drive;
   private final PivotSubsystem pivot;
   private final ElevatorSubsystem elevator;
   private final FunnelSubsystem funnel;
@@ -83,20 +89,20 @@ public class Superstructure extends SubsystemBase {
   private Goal currentGoal = Goal.DEFAULT;
 
   @AutoLogOutput(key = "Superstructure/Current Game Piece")
-  private Pose3d currentGamePiece = new Pose3d();
+  private static Pose3d currentGamePiece = new Pose3d();
 
   private PivotSubsystem.State desiredPivotState;
   private ElevatorSubsystem.State desiredElevatorState;
 
   public Superstructure(
-      Supplier<Pose2d> robotPoseSupplier,
+      DriveSubsystem drive,
       PivotSubsystem pivot,
       ElevatorSubsystem elevator,
       FunnelSubsystem funnel,
       ClimberSubsystem climber,
       IntakeSubsystem intake) {
     setName("Superstructure");
-    this.robotPoseSupplier = robotPoseSupplier;
+    this.drive = drive;
     this.pivot = pivot;
     this.elevator = elevator;
     this.funnel = funnel;
@@ -141,24 +147,46 @@ public class Superstructure extends SubsystemBase {
 
     // If we have a game piece, display it in the robot
     if (intake.hasCoral()) {
+      Pose3d robotPose =
+          new Pose3d(
+              RobotBase.isReal()
+                  ? drive.getPose()
+                  : RobotContainer.swerveDriveSimulation.getSimulatedDriveTrainPose());
 
-      // Convert robotPose to Pose3d (for some reason it's negated so invert it)
-      Pose3d robotPose = new Pose3d(robotPoseSupplier.get()).times(-1);
+      Transform3d coralOffset =
+          new Transform3d(
+              // Origin to bumper + Coral length - random number to fix my math being wrong
+              new Translation3d(0.134856 + 0.301625 - 0.055, 0, 0),
+              // Angle offset when arm is straight sideways
+              new Rotation3d(0.0, Units.degreesToRadians(-29.20274), 0.0));
 
       currentGamePiece =
-          pivotPose
-              .transformBy(
-                  new Transform3d(
-                      // Distance from origin to bumper + coral length - whatever to fix my poor math
-                      0.134856 + 0.301625 - 0.055,
-                      0,
-                      0,
-                      // Rotation from ground plane to 0 position pivot angle (aka straight sideways)
-                      new Rotation3d(0.0, Units.degreesToRadians(-29.20274), 0.0)))
-              .relativeTo(robotPose);
+          robotPose.transformBy(pivotPose.minus(new Pose3d())).transformBy(coralOffset);
     } else {
       currentGamePiece = new Pose3d();
     }
+  }
+
+  public static void attemptCoralScore() {
+    AbstractDriveTrainSimulation driveSimulation = RobotContainer.swerveDriveSimulation;
+
+    SimulatedArena.getInstance()
+        .addGamePieceProjectile(
+            new ReefscapeCoralOnFly(
+                // Obtain robot position from drive simulation
+                driveSimulation.getSimulatedDriveTrainPose().getTranslation(),
+                // The scoring mechanism is installed at (0.46, 0) (meters) on the robot
+                new Translation2d(0.46, 0),
+                // Obtain robot speed from drive simulation
+                driveSimulation.getDriveTrainSimulatedChassisSpeedsFieldRelative(),
+                // Obtain robot facing from drive simulation
+                driveSimulation.getSimulatedDriveTrainPose().getRotation(),
+                // The height at which the coral is ejected
+                Meters.of(currentGamePiece.getZ()),
+                // The initial speed of the coral
+                MetersPerSecond.of(-1),
+                // The coral is ejected vertically downwards
+                Degrees.of(100)));
   }
 
   private void setGoal(Goal goal) {

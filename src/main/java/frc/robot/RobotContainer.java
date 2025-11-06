@@ -112,7 +112,7 @@ public class RobotContainer {
         pivot = new PivotSubsystem(new PivotIOSim());
         elevator = new ElevatorSubsystem(new ElevatorIOSim());
         funnel = new FunnelSubsystem(new FunnelIOSim());
-        intake = new IntakeSubsystem(new IntakeIOSim());
+        intake = new IntakeSubsystem(new IntakeIOSim(swerveDriveSimulation));
         vision =
             new VisionSubsystem(
                 drivetrain::addVisionMeasurement,
@@ -154,8 +154,7 @@ public class RobotContainer {
         break;
     }
 
-    superstructure =
-        new Superstructure(drivetrain::getPose, pivot, elevator, funnel, climber, intake);
+    superstructure = new Superstructure(drivetrain, pivot, elevator, funnel, climber, intake);
 
     setupControllerBindings();
     setupPathPlanner();

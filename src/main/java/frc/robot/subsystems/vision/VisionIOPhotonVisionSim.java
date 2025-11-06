@@ -59,9 +59,12 @@ public class VisionIOPhotonVisionSim extends VisionIOPhotonVision {
       visionSim.addAprilTags(Constants.FIELD_LAYOUT);
     }
 
-    // Add sim camera
-    visionSim.addCamera(
-        new PhotonCameraSim(camera, cameraProperties.setAvgLatencyMs(15)), robotToCamera);
+    // Add sim camera (disable camera streams, we don't really care tbh)
+    PhotonCameraSim cameraSim = new PhotonCameraSim(camera, cameraProperties.setAvgLatencyMs(15));
+    cameraSim.enableRawStream(false);
+    cameraSim.enableProcessedStream(false);
+    cameraSim.setMaxSightRange(4.25); // Can only see at most half the field length
+    visionSim.addCamera(cameraSim, robotToCamera);
   }
 
   @Override

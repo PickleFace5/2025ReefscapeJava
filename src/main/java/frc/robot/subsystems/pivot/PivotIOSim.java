@@ -1,5 +1,6 @@
 package frc.robot.subsystems.pivot;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -43,7 +44,9 @@ public class PivotIOSim implements PivotIO {
     } else {
       controller.reset(pivotSim.getAngularPositionRad(), pivotSim.getAngularVelocityRadPerSec());
     }
-    pivotSim.setInputVoltage(appliedVolts);
+
+    // Update sim state
+    pivotSim.setInputVoltage(MathUtil.clamp(appliedVolts, -12.0, 12.0));
     pivotSim.update(0.02);
 
     // Update inputs

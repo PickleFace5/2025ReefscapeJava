@@ -2,7 +2,6 @@ package frc.robot.subsystems.climber;
 
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
-import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.Constants;
 
@@ -23,9 +22,7 @@ public class ClimberIOSim implements ClimberIO {
   public void updateInputs(ClimberIOInputs inputs) {
     climbSim.update(0.02);
 
-    double batteryVoltage = RobotController.getInputVoltage();
-    inputs.appliedVolts = Math.min(Math.max(appliedVoltage, -batteryVoltage), batteryVoltage);
-
+    inputs.appliedVolts = appliedVoltage;
     inputs.velocityRadPerSec = climbSim.getAngularVelocityRadPerSec();
     inputs.positionRad = climbSim.getAngularPositionRad();
     inputs.currentAmps = Math.abs(climbSim.getCurrentDrawAmps());

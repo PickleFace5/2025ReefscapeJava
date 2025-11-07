@@ -31,7 +31,7 @@ public class IntakeIOTalonFX implements IntakeIO {
   private final StatusSignal<AngularVelocity> intakeVelocity;
   private final StatusSignal<Voltage> intakeAppliedVolts;
   private final StatusSignal<Current> intakeCurrentAmps;
-  private final StatusSignal<ForwardLimitValue> intakeLimit;
+  private final StatusSignal<Boolean> coralDetected;
 
   // Connection Debouncers
   private final Debouncer intakeConnectedDebounce =
@@ -62,11 +62,11 @@ public class IntakeIOTalonFX implements IntakeIO {
     intakeVelocity = intakeTalon.getVelocity();
     intakeAppliedVolts = intakeTalon.getMotorVoltage();
     intakeCurrentAmps = intakeTalon.getStatorCurrent();
-    intakeLimit = intakeTalon.getForwardLimit();
+    coralDetected = intakeCANRange.getIsDetected();
 
     // Configure periodic frames
     BaseStatusSignal.setUpdateFrequencyForAll(
-        50.0, intakeVelocity, intakeAppliedVolts, intakeCurrentAmps, intakeLimit);
+        50.0, intakeVelocity, intakeAppliedVolts, intakeCurrentAmps, coralDetected);
     intakeTalon.optimizeBusUtilization();
   }
 
@@ -79,7 +79,7 @@ public class IntakeIOTalonFX implements IntakeIO {
     inputs.intakeVelocityRadPerSec = Units.rotationsToRadians(intakeVelocity.getValueAsDouble());
     inputs.intakeAppliedVolts = intakeAppliedVolts.getValueAsDouble();
     inputs.intakeCurrentAmps = intakeCurrentAmps.getValueAsDouble();
-    inputs.sensorSensed = intakeLimit.getValue() == ForwardLimitValue.ClosedToGround;
+    inputs.sensorSensed = coralDetected.getValue();
   }
 
   @Override

@@ -168,8 +168,8 @@ public class Superstructure extends SubsystemBase {
   }
 
   public static void attemptCoralScore() {
+    if (RobotBase.isReal()) return;
     AbstractDriveTrainSimulation driveSimulation = RobotContainer.swerveDriveSimulation;
-
     SimulatedArena.getInstance()
         .addGamePieceProjectile(
             new ReefscapeCoralOnFly(

@@ -69,7 +69,9 @@ public class RobotContainer {
           DriveSubsystem.driveTrainSimulationConfig, new Pose2d(3, 3, Rotation2d.kZero));
 
   static {
-    SimulatedArena.getInstance().addDriveTrainSimulation(swerveDriveSimulation);
+    if (RobotBase.isReal()) {
+      SimulatedArena.getInstance().addDriveTrainSimulation(swerveDriveSimulation);
+    }
   }
 
   public RobotContainer() {

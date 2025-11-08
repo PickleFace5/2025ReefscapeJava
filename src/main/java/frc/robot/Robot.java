@@ -56,8 +56,10 @@ public class Robot extends LoggedRobot {
     Logger.start();
 
     // Disable joystick connection is we aren't connected to a real field (or simulating)
-    DriverStation.silenceJoystickConnectionWarning(!DriverStation.isFMSAttached() || RobotBase.isSimulation());
+    DriverStation.silenceJoystickConnectionWarning(
+        !DriverStation.isFMSAttached() || RobotBase.isSimulation());
 
+    // CTRE status signal logging (only enabled if USB drive is attached)
     SignalLogger.enableAutoLogging(false);
     if (SignalLogger.setPath("/media/sda1/ctre-logs/").isOK()) SignalLogger.start();
     else SignalLogger.stop();

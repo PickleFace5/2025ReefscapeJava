@@ -16,6 +16,7 @@ public class IntakeIOSim implements IntakeIO {
   private final DCMotorSim intakeSim;
 
   private double intakeAppliedVolts = 0.0;
+  private boolean intakeIgnoreLimits = false;
 
   private final IntakeSimulation intakeSimulation;
 
@@ -48,12 +49,16 @@ public class IntakeIOSim implements IntakeIO {
     inputs.intakeAppliedVolts = intakeAppliedVolts;
     inputs.intakeCurrentAmps = Math.abs(intakeSim.getCurrentDrawAmps());
 
+    if (Superstructure.canFunnelIntake() && intakeAppliedVolts > 0 && !intakeIgnoreLimits) {
+      intakeSimulation.addGamePieceToIntake();
+    }
     inputs.sensorSensed = intakeSimulation.getGamePiecesAmount() != 0;
   }
 
   @Override
   public void setIntakeOpenLoop(double output, boolean ignoreLimits) {
     intakeAppliedVolts = output;
+    intakeIgnoreLimits = ignoreLimits;
     if (output > 0 && !ignoreLimits) {
       intakeSimulation.startIntake();
     } else if (output == 0) {

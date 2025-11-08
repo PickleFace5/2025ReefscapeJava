@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -165,6 +166,35 @@ public class Superstructure extends SubsystemBase {
     } else {
       currentGamePiece = new Pose3d();
     }
+  }
+
+  /// SIMULATION ONLY
+  public static boolean canFunnelIntake() {
+    if (RobotBase.isReal()) return false;
+
+    // Check if we're at a coral station (rough bounding boxes for each corner of the field)
+    AbstractDriveTrainSimulation driveSimulation = RobotContainer.swerveDriveSimulation;
+    Pose2d robotPose = driveSimulation.getSimulatedDriveTrainPose();
+    boolean atFunnel;
+    if (DriverStation.getAlliance().orElse(DriverStation.Alliance.Blue)
+        == DriverStation.Alliance.Red) {
+      // Red alliance
+      atFunnel =
+          robotPose.getX() > 16
+              && ((robotPose.getY() < 1.4
+                      && MathUtil.isNear(127.25, robotPose.getRotation().getDegrees(), 5))
+                  || (robotPose.getY() > 6.6
+                      && MathUtil.isNear(-124, robotPose.getRotation().getDegrees(), 5)));
+    } else {
+      // Blue alliance
+      atFunnel =
+          robotPose.getX() < 2
+              && ((robotPose.getY() < 1.4
+                      && MathUtil.isNear(53.06, robotPose.getRotation().getDegrees(), 5))
+                  || (robotPose.getY() > 6.5
+                      && MathUtil.isNear(-52.6, robotPose.getRotation().getDegrees(), 5)));
+    }
+    return atFunnel;
   }
 
   public static void attemptCoralScore() {

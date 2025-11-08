@@ -35,9 +35,6 @@ public class IntakeSubsystem extends SubsystemBase {
 
   private State currentState = State.HOLD;
 
-  @AutoLogOutput(key = "Intake/Ignoring Limit Switch")
-  private boolean ignoringLimits = false;
-
   public IntakeSubsystem(IntakeIO io) {
     this.io = io;
     setName("Intake");
@@ -60,7 +57,8 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public void setState(State state) {
     currentState = state;
-    ignoringLimits = state.ignoreLimits;
+    boolean ignoringLimits = state.ignoreLimits;
+    Logger.recordOutput("Intake/Ignoring Limit Switch", ignoringLimits);
     io.setIntakeOpenLoop(currentState.output, ignoringLimits);
   }
 

@@ -55,20 +55,26 @@ public class Robot extends LoggedRobot {
     // Start AdvantageKit logger
     Logger.start();
 
-    DriverStation.silenceJoystickConnectionWarning(!DriverStation.isFMSAttached());
-    m_robotContainer = new RobotContainer();
+    // Disable joystick connection is we aren't connected to a real field (or simulating)
+    DriverStation.silenceJoystickConnectionWarning(!DriverStation.isFMSAttached() || RobotBase.isSimulation());
 
     SignalLogger.enableAutoLogging(false);
-    SignalLogger.stop();
+    if (SignalLogger.setPath("/media/sda1/ctre-logs/").isOK()) SignalLogger.start();
+    else SignalLogger.stop();
 
+    // Setup USB Camera stream (used for climbing)
     CameraServer.startAutomaticCapture();
 
+    // Setup web server for downloading Elastic layouts
+    // (https://frc-elastic.gitbook.io/docs/additional-features-and-references/remote-layout-downloading)
     WebServer.start(5800, Filesystem.getDeployDirectory().toString());
 
-    DataLogManager.log("Robot initialized");
-
+    // Setup Match Time widget on NT
     NetworkTable dashboardNT = NetworkTableInstance.getDefault().getTable("Elastic");
     matchTimePub = dashboardNT.getDoubleTopic("Match Time").publish();
+
+    m_robotContainer = new RobotContainer();
+    DataLogManager.log("Robot initialized");
   }
 
   @Override
@@ -79,7 +85,9 @@ public class Robot extends LoggedRobot {
   }
 
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    DataLogManager.log("Robot disabled");
+  }
 
   @Override
   public void disabledPeriodic() {
@@ -92,7 +100,9 @@ public class Robot extends LoggedRobot {
   }
 
   @Override
-  public void disabledExit() {}
+  public void disabledExit() {
+    DataLogManager.log("Exiting disabled mode...");
+  }
 
   @Override
   public void autonomousInit() {
@@ -122,10 +132,10 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void teleopInit() {
+    DataLogManager.log("Teleoperated period started");
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
-    DataLogManager.log("Teleoperated period started");
   }
 
   @Override
@@ -155,7 +165,9 @@ public class Robot extends LoggedRobot {
   public void testPeriodic() {}
 
   @Override
-  public void testExit() {}
+  public void testExit() {
+    DataLogManager.log("Test mode disabled");
+  }
 
   @Override
   public void simulationInit() {

@@ -68,12 +68,6 @@ public class RobotContainer {
       new SwerveDriveSimulation(
           DriveSubsystem.driveTrainSimulationConfig, new Pose2d(3, 3, Rotation2d.kZero));
 
-  static {
-    if (!RobotBase.isReal()) {
-      SimulatedArena.getInstance().addDriveTrainSimulation(swerveDriveSimulation);
-    }
-  }
-
   public RobotContainer() {
     switch (Constants.currentMode) {
       case REAL:
@@ -154,6 +148,10 @@ public class RobotContainer {
                 new VisionIO() {},
                 new VisionIO() {});
         break;
+    }
+
+    if (RobotBase.isSimulation()) {
+      SimulatedArena.getInstance().addDriveTrainSimulation(swerveDriveSimulation);
     }
 
     superstructure = new Superstructure(drivetrain, pivot, elevator, funnel, climber, intake);

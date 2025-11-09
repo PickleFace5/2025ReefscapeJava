@@ -141,6 +141,7 @@ public class DriveSubsystem extends SubsystemBase {
         FRCNetComm.tInstances.kRobotDriveSwerve_AdvantageKit);
 
     // Start odometry thread
+    PhoenixOdometryThread.setCANFD(TunerConstants.kCANBus.isNetworkFD());
     PhoenixOdometryThread.getInstance().start();
 
     // Configure AutoBuilder for PathPlanner

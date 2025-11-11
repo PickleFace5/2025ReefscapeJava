@@ -25,6 +25,8 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 public class Robot extends LoggedRobot {
   private Command m_autonomousCommand;
   private final RobotContainer m_robotContainer;
+
+  // Match time for Elastic
   private final DoublePublisher matchTimePub;
 
   private Command currentAuto;
@@ -93,7 +95,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void disabledPeriodic() {
-    // Workaround: Check to see if the autoChooser has a new auto, then set the robot pose,
+    // Workaround: Check to see if the autoChooser has a new auto, then set the robot pose
     if (currentAuto != m_robotContainer.getAutonomousCommand()) {
       m_robotContainer.readyRobotForMatch();
       currentAuto = m_robotContainer.getAutonomousCommand();
@@ -145,6 +147,7 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void teleopExit() {
+    // Send notif to dashboard at the end of a match :)
     DataLogManager.log("Teleoperated period ended");
     if (DriverStation.isFMSAttached()) {
       Elastic.sendNotification(
@@ -178,8 +181,10 @@ public class Robot extends LoggedRobot {
 
   @Override
   public void simulationPeriodic() {
+    // Update simulated field (drivetrain, intake)
     SimulatedArena.getInstance().simulationPeriodic();
 
+    // Log robot pose + game pieces
     Logger.recordOutput(
         "MapleSim/RobotPosition",
         RobotContainer.swerveDriveSimulation.getSimulatedDriveTrainPose());

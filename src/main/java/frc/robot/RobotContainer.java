@@ -49,10 +49,13 @@ import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
+
+  // Controllers (bind both to the same port in sim for ease of control)
   private final CommandXboxController driver = new CommandXboxController(0);
   private final CommandXboxController functions =
       new CommandXboxController(RobotBase.isReal() ? 1 : 0);
 
+  // Subsystems
   private final DriveSubsystem drivetrain;
   private final ClimberSubsystem climber;
   private final PivotSubsystem pivot;
@@ -62,8 +65,10 @@ public class RobotContainer {
   private final VisionSubsystem vision;
   private final Superstructure superstructure;
 
+  // Elastic auto chooser
   private LoggedDashboardChooser<Command> autoChooser;
 
+  // MapleSim configuration (start on the field)
   public static SwerveDriveSimulation swerveDriveSimulation =
       new SwerveDriveSimulation(
           DriveSubsystem.driveTrainSimulationConfig, new Pose2d(3, 3, Rotation2d.kZero));
@@ -150,10 +155,10 @@ public class RobotContainer {
         break;
     }
 
-    if (RobotBase.isSimulation()) {
-      SimulatedArena.getInstance().addDriveTrainSimulation(swerveDriveSimulation);
-    }
+    // Add drivetrain to MapleSim if in simulation
+    if (RobotBase.isSimulation()) SimulatedArena.getInstance().addDriveTrainSimulation(swerveDriveSimulation);
 
+    // Superstructure can be created regardless of sim state due to having no actual devices to control, just logic
     superstructure = new Superstructure(drivetrain, pivot, elevator, funnel, climber, intake);
 
     setupControllerBindings();
@@ -170,6 +175,7 @@ public class RobotContainer {
             () -> -driver.getLeftX(),
             () -> -driver.getRightX()));
 
+    // Left bumper: Robot relative
     driver
         .leftBumper()
         .whileTrue(
@@ -179,13 +185,16 @@ public class RobotContainer {
                 () -> -driver.getLeftX(),
                 () -> -driver.getRightX()));
 
+    // Right bumper: Drop coral
     driver
         .rightBumper()
         .whileTrue(intake.setDesiredStateCommand(IntakeSubsystem.State.CORAL_OUTPUT))
         .onFalse(intake.setDesiredStateCommand(IntakeSubsystem.State.HOLD));
 
+    // A: X-brake
     driver.a().whileTrue(DriveCommands.brakeWithX(drivetrain));
 
+    // Left trigger: Align to closest left branch
     driver
         .leftTrigger()
         .whileTrue(
@@ -195,6 +204,7 @@ public class RobotContainer {
                 () -> -driver.getLeftY(),
                 () -> -driver.getLeftX()));
 
+    // Right trigger: Align to closest right branch
     driver
         .rightTrigger()
         .whileTrue(
@@ -350,7 +360,7 @@ public class RobotContainer {
     autoChooser.addOption(
         "Basic Leave",
         drivetrain
-            .run(() -> DriveCommands.robotRelative(drivetrain, () -> 1, () -> 0, () -> 0))
+            .run(() -> DriveCommands.robotRelative(drivetrain, () -> 0.25, () -> 0, () -> 0))
             .withTimeout(1.0));
     autoChooser.addOption(
         "Feedforward Characterization",

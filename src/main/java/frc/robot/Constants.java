@@ -21,9 +21,11 @@ public class Constants {
     REPLAY
   }
 
+  // AprilTag layout
   public static final AprilTagFieldLayout FIELD_LAYOUT =
       AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeWelded);
 
+  // CANBus IDs
   public static class CanIDs {
     public static final int LEFT_ELEVATOR_TALON = 10;
     public static final int RIGHT_ELEVATOR_TALON = 11;

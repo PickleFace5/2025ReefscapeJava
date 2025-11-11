@@ -32,6 +32,7 @@ public class Superstructure extends SubsystemBase {
     FINISH
   }
 
+  // Subsystems
   private final SwerveSubsystem drivetrain;
   private final PivotSubsystem pivot;
   private final ElevatorSubsystem elevator;
@@ -42,6 +43,7 @@ public class Superstructure extends SubsystemBase {
 
   private Goal currentGoal = Goal.DEFAULT;
 
+  // Desired state for safety checks
   private PivotSubsystem.SubsystemState desiredPivotState;
   private ElevatorSubsystem.SubsystemState desiredElevatorState;
 
@@ -53,6 +55,7 @@ public class Superstructure extends SubsystemBase {
       FunnelSubsystem.SubsystemState funnelState,
       VisionSubsystem.SubsystemState visionState) {}
 
+  // Publishers
   static NetworkTable table = NetworkTableInstance.getDefault().getTable("Superstructure");
   private static final StringPublisher currentGoalPub =
       table.getStringTopic("Current Goal").publish();
@@ -194,6 +197,7 @@ public class Superstructure extends SubsystemBase {
       climber.setDesiredState(ClimberSubsystem.SubsystemState.CLIMB_IN_FULL);
     }
 
+    // Component poses for AdvantageScope fanciness
     Pose3d[] elevatorPoses = elevator.getComponentPoses();
     componentPoses.set(
         new Pose3d[] {
@@ -211,6 +215,7 @@ public class Superstructure extends SubsystemBase {
 
     boolean safetyChecks = shouldEnableSafetyChecks(states.pivotState, states.elevatorState);
 
+    // Set each subsystem state from goal
     if (states.pivotState != null) {
       desiredPivotState = states.pivotState;
       if (safetyChecks) {
@@ -234,9 +239,11 @@ public class Superstructure extends SubsystemBase {
     if (states.funnelState != null) funnel.setDesiredState(states.funnelState);
     if (states.visionState != null) vision.setDesiredState(states.visionState);
 
+    // le publish goal
     currentGoalPub.set(goal.name());
   }
 
+  ///  Enable safety checks if... that is true
   private boolean shouldEnableSafetyChecks(
       PivotSubsystem.SubsystemState pivotState, ElevatorSubsystem.SubsystemState elevatorState) {
     if (elevatorState == elevator.getCurrentState()) return false;

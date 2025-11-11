@@ -60,6 +60,7 @@ public class VisionSubsystem extends StateSubsystem<VisionSubsystem.SubsystemSta
   private final List<String> cameras;
   private final ExecutorService executor;
 
+  // Publishing for debugging/logging
   private final StructArrayPublisher<Pose3d> visibleTagsPub =
       getNetworkTable().getStructArrayTopic("Visible Tags", Pose3d.struct).publish();
   private final StructPublisher<Pose2d> finalMeasurementPub =
@@ -84,6 +85,7 @@ public class VisionSubsystem extends StateSubsystem<VisionSubsystem.SubsystemSta
       }
     }
 
+    // Creates threads for each camera respectively
     this.executor = Executors.newFixedThreadPool(this.cameras.size());
   }
 
@@ -91,6 +93,7 @@ public class VisionSubsystem extends StateSubsystem<VisionSubsystem.SubsystemSta
   public void periodic() {
     super.periodic();
 
+    // Don't read cameras if we've set it to NO_ESTIMATES or if we're spinning quickly (too much blur, saves computing)
     SubsystemState state = getCurrentState();
     if (state == SubsystemState.NO_ESTIMATES
         || Math.abs(swerve.getPigeon2().getAngularVelocityZWorld().getValue().in(DegreesPerSecond))
@@ -98,6 +101,7 @@ public class VisionSubsystem extends StateSubsystem<VisionSubsystem.SubsystemSta
       return;
     }
 
+    // Process each camera in parallel
     List<Future<CameraResult>> futures =
         cameras.stream().map(cam -> executor.submit(() -> processCamera(cam))).toList();
 
@@ -110,8 +114,10 @@ public class VisionSubsystem extends StateSubsystem<VisionSubsystem.SubsystemSta
         CameraResult result = future.get();
         LimelightHelpers.PoseEstimate estimate = result.estimate;
 
+        // Ignore bad estimates
         if (estimate == null || estimate.tagCount == 0) continue;
 
+        // Add all tags this estimate sees
         visibleTags.addAll(
             Arrays.stream(estimate.rawFiducials)
                 .map(fid -> Constants.FIELD_LAYOUT.getTagPose(fid.id))
@@ -120,6 +126,7 @@ public class VisionSubsystem extends StateSubsystem<VisionSubsystem.SubsystemSta
 
         allMeasurements.add(estimate.pose);
 
+        // If this pose is the best estimate override the previous best
         if (isBetterEstimate(estimate, bestEstimate)) {
           bestEstimate = estimate;
         }
@@ -129,6 +136,7 @@ public class VisionSubsystem extends StateSubsystem<VisionSubsystem.SubsystemSta
       }
     }
 
+    // If we have a best estimate, send it to the pose estimator
     if (bestEstimate != null) {
       swerve.addVisionMeasurement(
           bestEstimate.pose,
@@ -139,6 +147,7 @@ public class VisionSubsystem extends StateSubsystem<VisionSubsystem.SubsystemSta
       finalMeasurementPub.set(Pose2d.kZero);
     }
 
+    // Log all measurements
     visionMeasurementsPub.set(allMeasurements.toArray(new Pose2d[0]));
     visibleTagsPub.set(visibleTags.toArray(new Pose3d[0]));
   }
@@ -149,6 +158,7 @@ public class VisionSubsystem extends StateSubsystem<VisionSubsystem.SubsystemSta
 
     int[] tagIds = desiredState.getTagIds().stream().mapToInt(Integer::intValue).toArray();
     for (String camera : cameras) {
+      // Update limelight overrides for tag IDs
       LimelightHelpers.SetFiducialIDFiltersOverride(camera, tagIds);
     }
 
@@ -158,9 +168,11 @@ public class VisionSubsystem extends StateSubsystem<VisionSubsystem.SubsystemSta
   private CameraResult processCamera(String camera) {
     var stateCopy = swerve.getStateCopy();
 
+    // Tell the LL the robots orientation (MegaTag 2)
     LimelightHelpers.SetRobotOrientation(
         camera, stateCopy.Pose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
 
+    // Get le pose
     LimelightHelpers.PoseEstimate pose =
         LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(camera);
     if (pose == null || pose.tagCount == 0) {
@@ -172,6 +184,7 @@ public class VisionSubsystem extends StateSubsystem<VisionSubsystem.SubsystemSta
 
   public void setThrottle(int throttle) {
     for (String camera : cameras) {
+      // El throttel
       LimelightHelpers.SetThrottle(camera, throttle);
     }
   }
@@ -181,10 +194,13 @@ public class VisionSubsystem extends StateSubsystem<VisionSubsystem.SubsystemSta
     if (currentBest == null) {
       return newEstimate.avgTagDist < 4.125;
     }
+    // The closer the tags the better the measurement
     return newEstimate.avgTagDist < currentBest.avgTagDist;
   }
 
-  /** Computes dynamic standard deviations based on tag count and distance. */
+  /** Computes dynamic standard deviations based on tag count and distance.
+   * Taken from YAGSL.
+   * */
   private Matrix<N3, N1> getDynamicStdDevs(LimelightHelpers.PoseEstimate estimate) {
     if (estimate.tagCount == 0) {
       return VecBuilder.fill(0.5, 0.5, 0.5);

@@ -23,6 +23,10 @@ import java.util.List;
 /** Subsystem class for handling subsystem state transitions and motor simulation models. */
 public abstract class StateSubsystem<S extends Enum<S>> extends SubsystemBase {
 
+  // VERY IMPORTANT: This subsystem architecture does not translate well to Java.
+  // It would be better off just not having a shared class like this.
+  // See the dev branch for a much better way that the subsystems were done w/ AdvantageKit and IOs
+
   /** Represents the possible subsystem states. */
   public enum SubsystemState {
     OFF
@@ -87,6 +91,7 @@ public abstract class StateSubsystem<S extends Enum<S>> extends SubsystemBase {
       return;
     }
 
+    // Update simulated devices
     for (SimModel model : simModels) {
       TalonFX talon = model.talon;
       DCMotorSim sim = model.sim;

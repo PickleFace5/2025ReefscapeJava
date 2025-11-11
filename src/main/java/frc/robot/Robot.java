@@ -18,19 +18,27 @@ import frc.robot.lib.Elastic;
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
   private final RobotContainer m_robotContainer;
+
+  // Match time publisher for Elastic dashboard
   private final DoublePublisher matchTimePub;
 
   public Robot() {
+    // Ignore joystick warning if we're not on a real field
     DriverStation.silenceJoystickConnectionWarning(!DriverStation.isFMSAttached());
+
+    // Init everything lol
     m_robotContainer = new RobotContainer();
 
+    // Logging
     SignalLogger.enableAutoLogging(false);
     SignalLogger.stop();
     DataLogManager.start();
     DriverStation.startDataLog(DataLogManager.getLog());
 
+    // Create USB camera stream
     CameraServer.startAutomaticCapture();
 
+    // Open port for remote layout downloading from Elastic
     WebServer.start(5800, Filesystem.getDeployDirectory().toString());
 
     DataLogManager.log("Robot initialized");
@@ -43,11 +51,13 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
 
+    // Update match time display
     matchTimePub.set(Timer.getMatchTime());
   }
 
   @Override
   public void disabledInit() {
+    // Incrase throttle to decrease overheating isues
     m_robotContainer.setVisionThrottle(150);
   }
 
@@ -56,6 +66,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledExit() {
+    // Have the cameras lock tf in
     m_robotContainer.setVisionThrottle(0);
   }
 
@@ -63,12 +74,14 @@ public class Robot extends TimedRobot {
   public void autonomousInit() {
     DataLogManager.log("Autonomous period started");
 
+    // Schedule selected auto
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
     if (m_autonomousCommand != null) {
       DataLogManager.log("Selected Auto: " + m_autonomousCommand.getName());
       m_autonomousCommand.schedule();
     }
 
+    // Automatically switch tab in Elastic
     Elastic.selectTab("Autonomous");
   }
 
@@ -77,12 +90,14 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousExit() {
+    // Switch Elastic tabs when leaving auto
     DataLogManager.log("Autonomous period ended");
     Elastic.selectTab("Teleop");
   }
 
   @Override
   public void teleopInit() {
+    // End the auto command as a safety precaution
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
@@ -94,6 +109,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopExit() {
+    // Congratulate the drive team :)
     DataLogManager.log("Teleoperated period ended");
     if (DriverStation.isFMSAttached()) {
       Elastic.sendNotification(
@@ -106,6 +122,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void testInit() {
+    // Start SignalLogging + switch tabs for debugging
     DataLogManager.log("Test period started");
     CommandScheduler.getInstance().cancelAll();
     Elastic.selectTab("Debug");

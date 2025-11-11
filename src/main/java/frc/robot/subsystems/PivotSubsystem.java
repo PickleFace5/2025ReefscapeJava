@@ -28,6 +28,7 @@ import frc.robot.Constants;
 
 public class PivotSubsystem extends StateSubsystem<PivotSubsystem.SubsystemState> {
 
+  // States
   public enum SubsystemState {
     IDLE(null),
     AVOID_ELEVATOR(Constants.PivotConstants.ELEVATOR_PRIORITY_ANGLE),
@@ -50,18 +51,22 @@ public class PivotSubsystem extends StateSubsystem<PivotSubsystem.SubsystemState
     }
   }
 
+  // Devices
   private final CANcoder encoder;
   private final TalonFX masterMotor;
+
+  // Requests
   private final MotionMagicVoltage positionRequest;
   private final VoltageOut brakeRequest;
   private final VoltageOut sysIdRequest;
+
   private final SysIdRoutine sysIdRoutine;
 
   private final Debouncer atSetpointDebounce;
   private boolean atSetpoint;
 
+  // Configs
   private static final CANcoderConfiguration ENCODER_CONFIG = new CANcoderConfiguration();
-
   static {
     ENCODER_CONFIG.MagnetSensor.MagnetOffset = Constants.PivotConstants.CANCODER_OFFSET;
     ENCODER_CONFIG.MagnetSensor.AbsoluteSensorDiscontinuityPoint =
@@ -69,7 +74,6 @@ public class PivotSubsystem extends StateSubsystem<PivotSubsystem.SubsystemState
   }
 
   private static final TalonFXConfiguration MASTER_CONFIG = new TalonFXConfiguration();
-
   static {
     MASTER_CONFIG.Feedback.RotorToSensorRatio = Constants.PivotConstants.GEAR_RATIO;
     MASTER_CONFIG.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
@@ -92,10 +96,12 @@ public class PivotSubsystem extends StateSubsystem<PivotSubsystem.SubsystemState
     super("Pivot", SubsystemState.STOW);
     this.currentState = SubsystemState.STOW;
 
+    // Init devices
     encoder = new CANcoder(Constants.CanIDs.PIVOT_CANCODER);
     masterMotor = new TalonFX(Constants.CanIDs.LEFT_PIVOT_TALON);
     masterMotor.getSimState().Orientation = ChassisReference.Clockwise_Positive;
 
+    // Apply configs
     encoder.getConfigurator().apply(ENCODER_CONFIG);
     masterMotor.getConfigurator().apply(MASTER_CONFIG);
 

@@ -6,9 +6,11 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 
 public class Constants {
+  // Field layout for vision
   public static final AprilTagFieldLayout FIELD_LAYOUT =
       AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeWelded);
 
+  // All devices on the CAN bus' IDs
   public static class CanIDs {
     public static final int LEFT_ELEVATOR_TALON = 10;
     public static final int RIGHT_ELEVATOR_TALON = 11;
@@ -22,23 +24,34 @@ public class Constants {
     public static final int INTAKE_CANRANGE = 23;
   }
 
+  // NOTE: Most of these subsystems are laid out the samee way,
+  // so unless there's something unique I'm just commenting this one
   public static class ClimberConstants {
+    // Gear ratio (motor rotor to mechanism, AKA 48 rotor rotations = 1 climber rotation)
     public static final float GEAR_RATIO = 48;
+
+    // Tuning gains. If you don't have these memorized yet, lock in lmao
     public static final Slot0Configs GAINS =
         new Slot0Configs().withKP(1.0).withKI(0.0).withKD(0.0).withKS(0.0).withKV(0.0).withKA(0.0);
 
+    // Voltages for each request
     public static final float VOLTAGE_INWARDS = 4;
     public static final float VOLTAGE_OUTWARDS = -5;
     public static final float CLIMB_IN_VOLTAGE = 4;
 
+    // What position the climber is inside the robot (increase throttle because we know we have the cage)
     public static final double CLIMB_FULL_THRESHOLD = 0.44;
 
+    // Port of the servo (not on CAN bus so it's defined here)
     public static final int SERVO_PORT = 0;
+
+    // Servo angles for each state (enabled or disabled lol)
     public static final double SERVO_ENGAGED_ANGLE = 0;
     public static final int SERVO_DISENGAGED_ANGLE = 90;
   }
 
   public static class ElevatorConstants {
+    // Positions for each state
     public static final double L1_SCORE_POSITION = 2.208;
     public static final double L2_SCORE_POSITION = 1.841;
     public static final double L3_SCORE_POSITION = 3.576;
@@ -51,6 +64,7 @@ public class Constants {
 
     public static final double DEFAULT_POSITION = 0;
 
+    // MotionMagic constants
     public static final double CRUISE_VELOCITY = 9.5;
     public static final double MM_JERK = 6000;
     public static final double MM_UPWARD_ACCELERATION = 65;
@@ -62,15 +76,26 @@ public class Constants {
     public static final double GEAR_RATIO = 31.0 / 4.0;
     public static final Slot0Configs GAINS =
         new Slot0Configs()
-            .withKG(0.352)
+            .withKG(0.352) // kG is the amount of voltage to hold the elevator in place against gravity
             .withKP(40)
             .withKI(0.0)
             .withKD(0.0)
             .withKS(0.062)
             .withKV(0.0)
             .withKA(0.0)
-            .withGravityType(GravityTypeValue.Elevator_Static);
+            .withGravityType(GravityTypeValue.Elevator_Static); // This means kG is always active
+    // (since elevators always face the same gravitational force regardless of position
 
+    /*
+    NOTE: To calculate kG and kS for an elevator, use the following equations:
+
+    kG + kS = Voltage right before the elevator starts moving up
+    kG - kS = Voltage right before the elevator starts moving down
+
+    Once you have the 2 voltages solve it like any other system of equation problem.
+     */
+
+    // Tolerance for checking if we're at the setpoint (shocking)
     public static final double SETPOINT_TOLERANCE = 0.1;
   }
 
@@ -105,8 +130,13 @@ public class Constants {
             .withKV(0.0)
             .withKA(0.0)
             .withGravityType(GravityTypeValue.Arm_Cosine);
+    // Arm_Cosine means the among of kG applied depends on cos(pos), where 100% of kG is applied when completely horizontal,
+    // and 0% when facing straight up
 
+    // Yeah js look ts up gng
     public static final double CANCODER_DISCONTINUITY = 0.5;
+
+    // Offset.
     public static final double CANCODER_OFFSET = -0.168701171875;
 
     public static final double SETPOINT_TOLERANCE = 0.03125;
@@ -122,6 +152,7 @@ public class Constants {
     public static final double ALGAE_INTAKE_SPEED = 0.75;
     public static final double ALGAE_OUTPUT_SPEED = -1;
 
+    // Max amps allowed into the motor (reduces total power)
     public static final int SUPPLY_CURRENT = 35;
 
     public static final int GEAR_RATIO = 4;
@@ -148,10 +179,13 @@ public class Constants {
             .withGravityType(GravityTypeValue.Arm_Cosine);
 
     public static final int SUPPLY_CURRENT = 20;
+
+    // Stator current limits total current allowed from motor to rotor (limits max acceleration)
     public static final int STATOR_CURRENT = 50;
   }
 
   public static class VisionConstants {
+    // Names of each limelight (changed on their respective control panel)
     public static final String FRONT_LEFT = "limelight-fl";
     public static final String FRONT_RIGHT = "limelight-fr";
     public static final String FRONT_CENTER = "limelight-front";

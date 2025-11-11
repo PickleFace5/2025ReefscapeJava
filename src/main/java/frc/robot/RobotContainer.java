@@ -25,9 +25,11 @@ import java.util.Map;
 import java.util.Optional;
 
 public class RobotContainer {
+  // Setup controller ports
   private final CommandXboxController driver = new CommandXboxController(0);
   private final CommandXboxController functions = new CommandXboxController(1);
 
+  // Subsystems
   private final SwerveSubsystem drivetrain;
   private final ClimberSubsystem climber;
   private final PivotSubsystem pivot;
@@ -36,19 +38,23 @@ public class RobotContainer {
   private final IntakeSubsystem intake;
   private final VisionSubsystem vision;
   private final Superstructure superstructure;
+
+  // Drivetrain max speeds for teleop control
   private final double maxSpeed = TunerConstants.kSpeedAt12Volts.in(Units.MetersPerSecond);
   private final double maxAngularRate = Math.toRadians(360);
 
+  // Swerve requests
   private final FieldCentric fieldCentric;
   private final RobotCentric robotCentric;
   private final DriverAssist driverAssist;
   private final SwerveDriveBrake brake;
   private final PointWheelsAt point;
 
+  // Elastic Auto Chooser
   private SendableChooser<Command> autoChooser;
 
   public RobotContainer() {
-    // Subsystems
+    // Initialize subsystems
     drivetrain = TunerConstants.createDrivetrain();
     climber = new ClimberSubsystem();
     pivot = new PivotSubsystem();
@@ -104,6 +110,7 @@ public class RobotContainer {
   private void setupControllerBindings() {
 
     // DRIVE CONTROLLER
+    // FieldCentric as default control
     drivetrain.setDefaultCommand(
         drivetrain.applyRequest(
             () ->
@@ -112,6 +119,7 @@ public class RobotContainer {
                     .withVelocityY(-driver.getLeftX() * maxSpeed)
                     .withRotationalRate(-driver.getRightX() * maxAngularRate)));
 
+    // Left bumper: robot centric (mainly for ground intaking)
     driver
         .leftBumper()
         .whileTrue(
@@ -122,12 +130,16 @@ public class RobotContainer {
                         .withVelocityY(-driver.getLeftX() * maxSpeed)
                         .withRotationalRate(-driver.getRightX() * maxAngularRate)));
 
+    // Right bumper: drop coral
     driver
         .rightBumper()
         .whileTrue(intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.CORAL_OUTPUT))
         .onFalse(intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.HOLD));
 
+    // A: Lock wheels in an X formation (mainly used for tuning)
     driver.a().whileTrue(drivetrain.applyRequest(() -> brake));
+
+    // B: Point wheels in the given direction (used for tuning)
     driver
         .b()
         .whileTrue(
@@ -136,6 +148,7 @@ public class RobotContainer {
                     point.withModuleDirection(
                         new Rotation2d(-driver.getLeftY(), -driver.getLeftX()))));
 
+    // Right Trigger: Auto align to the nearest branch on the right
     driver
         .rightTrigger()
         .onTrue(
@@ -150,6 +163,7 @@ public class RobotContainer {
                         .withVelocityX(-driver.getLeftY() * maxSpeed)
                         .withVelocityY(-driver.getLeftX() * maxSpeed)));
 
+    // Left trigger: Auto align to the nearest branch on the left
     driver
         .leftTrigger()
         .onTrue(
@@ -164,27 +178,29 @@ public class RobotContainer {
                         .withVelocityX(-driver.getLeftY() * maxSpeed)
                         .withVelocityY(-driver.getLeftX() * maxSpeed)));
 
+    // Reset gyro manually (in case of offset on startup)
     driver.start().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
     // FUNCTION CONTROLLER
     // Map all triggers to respective superstructure goal
     Map<Trigger, Superstructure.Goal> goalBindings =
         Map.ofEntries(
-            Map.entry(functions.y(), Superstructure.Goal.L4_CORAL),
-            Map.entry(functions.x(), Superstructure.Goal.L3_CORAL),
-            Map.entry(functions.b(), Superstructure.Goal.L2_CORAL),
-            Map.entry(functions.a(), Superstructure.Goal.DEFAULT),
-            Map.entry(functions.y().and(functions.start()), Superstructure.Goal.NET),
-            Map.entry(functions.x().and(functions.start()), Superstructure.Goal.L3_ALGAE),
-            Map.entry(functions.b().and(functions.start()), Superstructure.Goal.L2_ALGAE),
-            Map.entry(functions.a().and(functions.start()), Superstructure.Goal.PROCESSOR),
-            Map.entry(functions.leftStick(), Superstructure.Goal.L1_CORAL));
+            Map.entry(functions.y(), Superstructure.Goal.L4_CORAL), // Y: L4 Coral
+            Map.entry(functions.x(), Superstructure.Goal.L3_CORAL), // X: L3 Coral
+            Map.entry(functions.b(), Superstructure.Goal.L2_CORAL), // B: L2 Coral
+            Map.entry(functions.a(), Superstructure.Goal.DEFAULT), // A: Default (startup state)
+            Map.entry(functions.y().and(functions.start()), Superstructure.Goal.NET), // Y + start: Net scoring
+            Map.entry(functions.x().and(functions.start()), Superstructure.Goal.L3_ALGAE), // X + start: L3 Algae
+            Map.entry(functions.b().and(functions.start()), Superstructure.Goal.L2_ALGAE), // B + start: L2 Algae
+            Map.entry(functions.a().and(functions.start()), Superstructure.Goal.PROCESSOR), // A + start: Processor
+            Map.entry(functions.leftStick(), Superstructure.Goal.L1_CORAL)); // L3 (press left joystick): L1 Coral
 
-    // Create all simple triggers
+    // Create triggers for function controller
     for (Map.Entry<Trigger, Superstructure.Goal> entry : goalBindings.entrySet()) {
       Trigger condition = entry.getKey();
       Superstructure.Goal goal = entry.getValue();
 
+      // If algae related, set the intake accordingly
       if (goal == Superstructure.Goal.L3_ALGAE
           || goal == Superstructure.Goal.NET
           || goal == Superstructure.Goal.L2_ALGAE
@@ -197,11 +213,12 @@ public class RobotContainer {
                         intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.ALGAE_INTAKE)))
             .onFalse(intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.ALGAE_HOLD));
       } else {
+        // Otherwise just change the superstructure state
         condition.onTrue(superstructure.setGoalCommand(goal));
       }
     }
 
-    // Intaking
+    // Funnel intake
     functions
         .leftBumper()
         .onTrue(
@@ -212,6 +229,8 @@ public class RobotContainer {
             Commands.parallel(
                 superstructure.setGoalCommand(Superstructure.Goal.DEFAULT),
                 intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.HOLD)));
+
+    // Ground intake
     functions
         .leftBumper()
         .and(functions.back())
@@ -224,7 +243,7 @@ public class RobotContainer {
                 superstructure.setGoalCommand(Superstructure.Goal.DEFAULT),
                 intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.HOLD)));
 
-    // Climbing
+    // Climber out
     functions
         .povLeft()
         .or(functions.povUpLeft())
@@ -235,6 +254,7 @@ public class RobotContainer {
                 superstructure.setGoalCommand(Superstructure.Goal.CLIMBING)))
         .onFalse(climber.setDesiredStateCommand(ClimberSubsystem.SubsystemState.STOP));
 
+    // Climber in
     functions
         .povRight()
         .or(functions.povUpRight())
@@ -245,11 +265,13 @@ public class RobotContainer {
                 superstructure.setGoalCommand(Superstructure.Goal.CLIMBING)))
         .onFalse(climber.setDesiredStateCommand(ClimberSubsystem.SubsystemState.STOP));
 
+    // "Finish" (move pivot into cage to balance CoG)
     functions.povUp().onTrue(superstructure.setGoalCommand(Superstructure.Goal.FINISH));
   }
 
   private void setupPathPlanner() {
     // Register named commands for superstructure and intake
+    // (These bind into commands for PathPlanner paths)
     NamedCommands.registerCommand(
         "Default", superstructure.setGoalCommand(Superstructure.Goal.DEFAULT));
     NamedCommands.registerCommand(
@@ -282,6 +304,7 @@ public class RobotContainer {
         "Algae Intake", intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.ALGAE_INTAKE));
     NamedCommands.registerCommand(
         "Algae Output", intake.setDesiredStateCommand(IntakeSubsystem.SubsystemState.ALGAE_OUTPUT));
+    // Funnel intake runs until we detect coral (or if we're simulating for testing)
     NamedCommands.registerCommand(
         "Funnel Intake",
         intake
@@ -295,17 +318,25 @@ public class RobotContainer {
     for (File file : autosFolder.listFiles()) {
       if (!file.getName().endsWith(".auto") || file.getName().equals(".DS_Store")) continue;
       String name = file.getName().replace(".auto", "");
+
+      // Create both normal and mirrored auto (normal autos on the left, mirrored autos on the right)
       autoChooser.addOption(name, new PathPlannerAuto(name, false));
       autoChooser.addOption(name + " (Mirrored)", new PathPlannerAuto(name, true));
     }
+    // Backup autos (none does... nothing... Basic Leave drives forward at 1 m/s for 1 second)
     autoChooser.setDefaultOption("None", Commands.none());
     autoChooser.addOption(
         "Basic Leave",
         drivetrain.applyRequest(() -> robotCentric.withVelocityX(1)).withTimeout(1.0));
+
+    // When we detect the auto selected has changed, reset the drivetrain pose
     autoChooser.onChange((cmd) -> setCorrectSwervePosition());
+
     SmartDashboard.putData("Selected Auto", autoChooser);
   }
 
+  /// Resets drivetrain pose to the selected auto's start.
+  /// This is to allow the vision to correct for an incidental translational offset before the match begins
   private void setCorrectSwervePosition() {
     Object selected = autoChooser.getSelected();
     if (selected instanceof PathPlannerAuto auto) {
@@ -316,6 +347,7 @@ public class RobotContainer {
     }
   }
 
+  /// Returns a flipped pose if on the red alliance (used in setCorrectSwervePosition)
   private static Pose2d flipPoseIfNeeded(Pose2d pose) {
     Optional<DriverStation.Alliance> alliance = DriverStation.getAlliance();
     if (alliance.isPresent() && alliance.get() == DriverStation.Alliance.Red) {
@@ -331,6 +363,7 @@ public class RobotContainer {
     return autoChooser.getSelected();
   }
 
+  /// Sets LimeLight throttle (see docs for details)
   public void setVisionThrottle(int throttle) {
     vision.setThrottle(throttle);
   }

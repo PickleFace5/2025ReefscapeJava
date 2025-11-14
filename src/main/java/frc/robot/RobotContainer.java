@@ -156,9 +156,11 @@ public class RobotContainer {
     }
 
     // Add drivetrain to MapleSim if in simulation
-    if (RobotBase.isSimulation()) SimulatedArena.getInstance().addDriveTrainSimulation(swerveDriveSimulation);
+    if (RobotBase.isSimulation())
+      SimulatedArena.getInstance().addDriveTrainSimulation(swerveDriveSimulation);
 
-    // Superstructure can be created regardless of sim state due to having no actual devices to control, just logic
+    // Superstructure can be created regardless of sim state due to having no actual devices to
+    // control, just logic
     superstructure = new Superstructure(drivetrain, pivot, elevator, funnel, climber, intake);
 
     setupControllerBindings();

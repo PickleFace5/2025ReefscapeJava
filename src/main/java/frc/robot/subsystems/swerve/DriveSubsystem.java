@@ -29,7 +29,6 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -100,11 +99,6 @@ public class DriveSubsystem extends SubsystemBase {
 
   private final SwerveSetpointGenerator setpointGenerator;
   private SwerveSetpoint previousSetpoint;
-
-  private double prevTimestamp = Timer.getFPGATimestamp();
-
-  @AutoLogOutput(key = "Drive/LoopTimeDelta")
-  private double timeDelta = 0.0;
 
   public static final DriveTrainSimulationConfig driveTrainSimulationConfig =
       DriveTrainSimulationConfig.Default()
@@ -237,10 +231,6 @@ public class DriveSubsystem extends SubsystemBase {
 
     // Update gyro alert
     gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Constants.Mode.SIM);
-
-    // Update loop time lag compensation
-    timeDelta = Timer.getFPGATimestamp() - prevTimestamp;
-    prevTimestamp = Timer.getFPGATimestamp();
   }
 
   /**
@@ -250,7 +240,7 @@ public class DriveSubsystem extends SubsystemBase {
    */
   public void runVelocity(ChassisSpeeds speeds) {
     // Calculate module setpoints
-    previousSetpoint = setpointGenerator.generateSetpoint(previousSetpoint, speeds, timeDelta);
+    previousSetpoint = setpointGenerator.generateSetpoint(previousSetpoint, speeds, 0.02);
     SwerveModuleState[] setpointStates = previousSetpoint.moduleStates();
 
     // Log unoptimized setpoints and setpoint speeds

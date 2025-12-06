@@ -1,0 +1,185 @@
+{
+  "name": "Leviathan",
+  "sourceUrl": "https://www.steelridge6343.org/",
+  "disableSimplification": true,
+  "rotations": [
+    {
+      "axis": "x",
+      "degrees": 90
+    },
+    {
+      "axis": "z",
+      "degrees": 90
+    }
+  ],
+  "position": [0, 0, 0],
+  "cameras": [
+    {
+      "name": "Front Center",
+      "rotations": [
+        {
+          "axis": "x",
+          "degrees": 0
+        },
+        {
+          "axis": "y",
+          "degrees": -20
+        },
+        {
+          "axis": "z",
+          "degrees": 0
+        }
+      ],
+      "position": [0.247, 0, 0.203],
+      "resolution":  [1280, 960],
+      "fov": 82
+    },
+    {
+      "name": "Front Left",
+      "rotations": [
+        {
+          "axis": "x",
+          "degrees": 0
+        },
+        {
+          "axis": "y",
+          "degrees": -15
+        },
+        {
+          "axis": "z",
+          "degrees": 45
+        }
+      ],
+      "position": [0.305081, 0.303433, 0.203],
+      "resolution":  [640, 480],
+      "fov": 54.5
+    },
+    {
+      "name": "Front Right",
+      "rotations": [
+        {
+          "axis": "x",
+          "degrees": 0
+        },
+        {
+          "axis": "y",
+          "degrees": -15
+        },
+        {
+          "axis": "z",
+          "degrees": -45
+        }
+      ],
+      "position": [0.305081, -0.303433, 0.203],
+      "resolution":  [640, 480],
+      "fov": 54.5
+    },
+    {
+      "name": "Back Center",
+      "rotations": [
+        {
+          "axis": "x",
+          "degrees": 0
+        },
+        {
+          "axis": "y",
+          "degrees": 0
+        },
+        {
+          "axis": "z",
+          "degrees": 180
+        }
+      ],
+      "position": [-0.030842, 0, 0.980425],
+      "resolution":  [1280, 960],
+      "fov": 82
+    }
+  ],
+  "components": [
+    {
+      "zeroedRotations": [
+        {
+          "axis": "x",
+          "degrees": 90
+        },
+        {
+          "axis": "y",
+          "degrees": 0
+        },
+        {
+          "axis": "z",
+          "degrees": 90
+        }
+      ],
+      "zeroedPosition": [0.311150, 0, -0.703243]
+    },
+    {
+      "zeroedRotations": [
+        {
+          "axis": "x",
+          "degrees": 90
+        },
+        {
+          "axis": "y",
+          "degrees": 0
+        },
+        {
+          "axis": "z",
+          "degrees": 90
+        }
+      ],
+      "zeroedPosition": [0, 0, 0]
+    },
+    {
+      "zeroedRotations": [
+        {
+          "axis": "x",
+          "degrees": 90
+        },
+        {
+          "axis": "y",
+          "degrees": 0
+        },
+        {
+          "axis": "z",
+          "degrees": 90
+        }
+      ],
+      "zeroedPosition": [0, 0, 0]
+    },
+    {
+      "zeroedRotations": [
+        {
+          "axis": "x",
+          "degrees": 90
+        },
+        {
+          "axis": "y",
+          "degrees": 0
+        },
+        {
+          "axis": "z",
+          "degrees": 90
+        }
+      ],
+      "zeroedPosition": [-0.323850, 0, -0.266700]
+    },
+    {
+      "zeroedRotations": [
+        {
+          "axis": "x",
+          "degrees": 90
+        },
+        {
+          "axis": "y",
+          "degrees": 0
+        },
+        {
+          "axis": "z",
+          "degrees": 90
+        }
+      ],
+      "zeroedPosition": [0, -0.292100, -0.463550]
+    }
+  ]
+}
